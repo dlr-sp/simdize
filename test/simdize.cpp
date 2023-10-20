@@ -1,21 +1,23 @@
-#include <iostream>
+// See the file "LICENSE" for the full license governing this code.
 
 #include <experimental/simd>
+#include <gtest/gtest.h>
+
+#include "member_overload.hpp"
+
 
 namespace stdx = std::experimental;
 
 template<size_t N> struct simd_index_array;
 template<size_t N> struct simd_index;
 template<class T, class SimdIndexType, size_t ElementSize> struct simd_access_expr;
-template<class T> concept is_class = std::is_class_v<T>;
-template<class T> concept is_not_class = !std::is_class_v<T>;
 
 template<size_t Pitch, size_t N, class T>
-auto gather_pitched(T* base_addr)
+auto gather_pitched(const T* base_addr)
 {
   return stdx::fixed_size_simd<std::remove_const_t<T>, N>([&](int i)
     {
-      return *reinterpret_cast<T*>(reinterpret_cast<const char*>(base_addr) + Pitch * i);
+      return *reinterpret_cast<const T*>(reinterpret_cast<const char*>(base_addr) + Pitch * i);
     });
 }
 
@@ -29,32 +31,20 @@ auto scatter_pitched(T* base_addr, const stdx::fixed_size_simd<T, N>& value)
 }
 
 
-template<typename T, size_t N, size_t ElementSize> struct dot_overload;
-
-template<is_not_class T, size_t N, size_t ElementSize>
-struct dot_overload<T, N, ElementSize> {};
-
-template<is_class T, size_t N, size_t ElementSize>
-struct dot_overload<T, N, ElementSize>
-{
-  template<auto T::*Member>
-  auto dot()
-  {
-    T& base = *static_cast<simd_access_expr<T, simd_index<N>, ElementSize>*>(this)->base_;
-    return simd_access_expr<std::remove_reference_t<decltype(base.*Member)>, simd_index<N>, ElementSize>{{}, &(base.*Member)};
-  }
-};
-
-
 template<class T, size_t N, size_t ElementSize>
-struct simd_access_expr<T, simd_index<N>, ElementSize> : dot_overload<T, N, ElementSize>
+struct simd_access_expr<T, simd_index<N>, ElementSize> : member_overload<T, simd_access_expr<T, simd_index<N>, ElementSize>>
 {
   T* base_;
 
-  template<class SIMD_SOURCE>
-  void operator=(const SIMD_SOURCE& x)
+  template<auto Member>
+  auto dot_overload()
   {
-    static_assert(N == x.size());
+    return simd_access_expr<std::remove_reference_t<decltype(base_->*Member)>, simd_index<N>, ElementSize>{{}, &(base_->*Member)};
+  }
+
+  template<class U>
+  void operator=(const stdx::fixed_size_simd<U, N>& x)
+  {
     if constexpr (sizeof(T) == ElementSize)
     {
       x.copy_to(base_, stdx::element_aligned);
@@ -163,15 +153,8 @@ auto& Subscript(T* data, size_t idx)
   return data[idx];
 }
 
-
-template<class T, class IndexType>
-void SimdAgnosticFunction(T* destination, const T* source, const IndexType& i)
-{
-  i[destination] = 1.0 / i[source];
-}
-
 template<size_t size, class FUNC>
-void SimdLoop(FUNC&& f, size_t array_size)
+void SimdLoop(size_t array_size, FUNC&& f)
 {
   simd_index<size> simd_i{0};
   for (; simd_i.index_ < array_size - size + 1; simd_i.index_ += size)
@@ -190,24 +173,15 @@ void DoRealWork()
   double source[array_size], destination[array_size];
   for (int i = 0; i < array_size; ++i) { source[i] = i + 1.0; }
 
-  SimdLoop<stdx::native_simd<double>::size()>([&](auto i) { SimdAgnosticFunction(destination, source, i); }, array_size);
+  SimdLoop<stdx::native_simd<double>::size()>(array_size,
+    [&](auto i)
+    {
+      i[destination] = 1.0 / i[source];
+    });
 
-Test:
   for (size_t i = 0; i < array_size; ++i)
   {
-    if (destination[i] != 1.0 / (i + 1.0))
-    {
-      std::cout << "error at " << i << ", expected " << 1.0 / (i + 1.0) << ", got " << destination[i] << "\n";
-    }
-  }
-}
-
-template<class T, class IndexType>
-void SimdAgnosticArrayFunction(T* destination, const T* source, const IndexType& i)
-{
-  for (int j = 0; j < 3; ++j)
-  {
-    i[destination][j] = 1.0 / i[source][j];
+    EXPECT_EQ(destination[i], 1.0 / (i + 1.0));
   }
 }
 
@@ -217,17 +191,20 @@ void DoRealArrayWork()
   double source[array_size][3], destination[array_size][3];
   for (int i = 0; i < array_size; ++i) for (int j = 0; j < 3; ++j) { source[i][j] = i + j + 1.0; }
 
-  SimdLoop<stdx::native_simd<double>::size()>([&](auto i) { SimdAgnosticArrayFunction(destination, source, i); }, array_size);
+  SimdLoop<stdx::native_simd<double>::size()>(array_size,
+    [&](auto i)
+    {
+      for (int j = 0; j < 3; ++j)
+      {
+        i[destination][j] = 1.0 / i[source][j];
+      }
+    });
 
-Test:
   for (size_t i = 0; i < array_size; ++i)
   {
     for (int j = 0; j < 3; ++j)
     {
-      if (destination[i][j] != 1.0 / (i + j + 1.0))
-      {
-        std::cout << "error at " << i << ", expected " << 1.0 / (i + 1.0) << ", got " << destination[i][j] << "\n";
-      }
+      EXPECT_EQ(destination[i][j], 1.0 / (i + j + 1.0));
     }
   }
 }
@@ -250,44 +227,42 @@ struct Vector
   }
 };
 
-template<class T, class IndexType>
-void SimdAgnosticVectorFunction(T* destination, const T* source, const IndexType& i)
-{
-  i[destination].template dot<&T::x>() = 1.0 / i[source].template dot<&T::x>();
-  i[destination].template dot<&T::y>() = 1.0 / i[source].template dot<&T::y>();
-}
-
 void DoRealVectorWork()
 {
   const size_t array_size = 101;
   Vector source[array_size], destination[array_size];
   for (int i = 0; i < array_size; ++i) { source[i].x = i + 1.0; source[i].y = i + 2.0; }
 
-  SimdLoop<stdx::native_simd<double>::size()>([&](auto i) { SimdAgnosticVectorFunction(destination, source, i); }, array_size);
+  SimdLoop<stdx::native_simd<double>::size()>(array_size,
+    [&](auto i)
+    {
+      i[destination].template dot<&Vector::x>() = 1.0 / i[source].template dot<&Vector::x>();
+      i[destination].template dot<&Vector::y>() = 1.0 / i[source].template dot<&Vector::y>();
+    });
 
-Test:
+
   for (size_t i = 0; i < array_size; ++i)
   {
-    if (destination[i].x != 1.0 / (i + 1.0))
-    {
-      std::cout << "error at " << i << ", expected " << 1.0 / (i + 1.0) << ", got " << destination[i].x << "\n";
-    }
-    if (destination[i].y != 1.0 / (i + 2.0))
-    {
-      std::cout << "error at " << i << ", expected " << 1.0 / (i + 2.0) << ", got " << destination[i].y << "\n";
-    }
+    EXPECT_EQ(destination[i].x, 1.0 / (i + 1.0));
+    EXPECT_EQ(destination[i].y, 1.0 / (i + 2.0));
   }
 }
 
 
-int main()
+TEST(Simdize, DirectArrayAccess)
 {
   DoRealWork();
-  DoRealArrayWork();
-  DoRealVectorWork();
-  std::cout << "Finished\n";
 }
 
+TEST(Simdize, DirectArrayArrayAccess)
+{
+  DoRealArrayWork();
+}
+
+TEST(Simdize, DirectArrayMemberAccess)
+{
+  DoRealVectorWork();
+}
 
 
 #if (0)
