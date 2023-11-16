@@ -1,13 +1,17 @@
 enable_testing()
 
 add_executable(
-  simdize
-  simdize.cpp
+  simd_access_test
+  elementwise_test.cpp
+  loop_test.cpp
+  macro_test.cpp
+  potential_operator_overload.cpp
 )
 target_link_libraries(
-  simdize
+  simd_access_test
   GTest::gtest_main
+#  -fsanitize=address,undefined
 )
 
 include(GoogleTest)
-gtest_discover_tests(simdize)
+gtest_discover_tests(simd_access_test)
