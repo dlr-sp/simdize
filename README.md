@@ -48,7 +48,7 @@ The core idea of the `simd_access` library is now to push the boundary of the ty
 Not only the computation, but also load and store operations are deduced.
 The deduction is done according to the type of the loop index.
 You don't use an integral type as loop index anymore, but a `simd_index`.
-Then step (1) and (3) both can deducing the matching operations according to the type of the index.
+Then step (1) and (3) both can deduce the matching operations according to the type of the index.
 In addition, it will once again be possible to intertwine all three steps for vectorized code in the way
 you are used to.
 A simplified version of `times2` (with improper residual loop handling) then could look as follows:
@@ -63,7 +63,7 @@ void times2(int size, double* dest, const double* source)
 }
 ```
 In this code the expressions `source[i]` and `dest[i]` load and store simd variables according to `simd_size` encoded
-as a template paramter in `simd_index`. As usual, the multiplication is also recognized as a simd operation.
+as a template paramter in `simd_index`. As usual, the multiplication is then also recognized as a simd operation.
 Unfortunately, the current C++ language has some shortcomings, so that the above code is not possible yet.
 However, the `simd_access` library provides a macro `SIMD_ACCESS` in addition to a `simd_index`
 to achieve a similar effect.
@@ -75,7 +75,7 @@ becomes legal C++.
 All functions and types of the library reside in the `simd_access` namespace (in short `sa`).
 The library contains four general components:
 1. A `SIMD_ACCESS` macro, which can be used to access variables as simd or scalar variables (depending on the context).
-1. A `sa::loop` function, which iterates over a given range of indices. Residual iterations are handled properly.
+1. An `sa::loop` function, which iterates over a given range of indices. Residual iterations are handled properly.
 1. An outline for a proposal to enable a global `operator[]` overload.
 1. An outline for a proposal to enable a member access overload (`operator.`).
 
@@ -85,7 +85,7 @@ The library contains four general components:
 
 ### A globally overloadable subscription operator (`operator[]`)
 
-### A overloadable member access operator (`operator.`)
+### An overloadable member access operator (`operator.`)
 
 ### Build Requirements
 
