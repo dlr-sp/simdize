@@ -1,4 +1,4 @@
-# SIMD Classes - Thinking one Step Further.
+# SIMD Classes - Thinking One Step Further.
 
 **simd_access** is meant as a supplement to `std::experimental::simd` (in short `stdx::simd`).
 The aim is to syntactically equalize the loading and saving of simd variables to the loading and saving of
@@ -73,19 +73,121 @@ becomes legal C++.
 ## The `simd_access` Library
 
 All functions and types of the library reside in the `simd_access` namespace (in short `sa`).
-The library contains four general components:
-1. A `SIMD_ACCESS` macro, which can be used to access variables as simd or scalar variables (depending on the context).
+The library contains these general components:
+1. The `sa::index`, which represents a simd index to a consecutive sequence of elements, and an `sa::index_array`,
+which represents randomly indexed elements in a simd type.
+1. A `SIMD_ACCESS` macro, which can be used to access variables as simd or scalar variables (depending on the index
+type passed to it). The variables can also be stored in an array-of-structure (AOS) layout.
 1. An `sa::loop` function, which iterates over a given range of indices. Residual iterations are handled properly.
 1. An outline for a proposal to enable a global `operator[]` overload.
 1. An outline for a proposal to enable a member access overload (`operator.`).
 
+
+### `sa::index` and `sa::index_array`
+
+The class `sa::index` represents a simd access to a consecutive sequence of elements.
+```c++
+// SimdSize: Length of the simd sequence.
+// IndexType: Type of the index.
+template<int SimdSize, class IndexType = size_t>
+struct sa::index
+{
+  // Return SimdSize.
+  static constexpr size_t size();
+
+  // The index, at which the sequence starts. Thus, the represented sequence is [index_, index_+SimdSize).
+  IndexType index_;
+};
+```
+
+The class `sa::index` represents a simd access to randomly indexed elements.
+```c++
+// SimdSize: Length of the simd sequence.
+// ArrayType: Type of the array, which stores the indices. Can also be a pointer into a larger array of indices.
+template<int SimdSize, class ArrayType = std::array<size_t, SimdSize>>
+struct index_array
+{
+  // Return SimdSize.
+  static constexpr size_t size() { return SimdSize; }
+
+  // The index array, index_[n] (with 0<=n<SimdSize) is the index of the n'th element in the simd type.
+  ArrayType index_;
+};
+```
+
 ### The `SIMD_ACCESS` Macro
+
+The `SIMD_ACCESS` can be used to 'simdize' a c++ expression, that represents a memory access.
+Let's assume the following typical AOS layout for an array of points:
+```c++
+struct Point { double x, y };
+std::vector<Point> points;
+```
+The expression `points[i].x` consists of the base array `points`, the index `i` and a member accessor `.x`.
+These three components must be passed to the `SIMD_ACCESS` macro separately: `SIMD_ACCESS(points, i, .x)`.
+In this way, the memory access becomes simdized, if `i` is an `sa:::index` or an `sa:::index_array`.
+If it is a read access, then `SIMD_ACCESS(points, i, .x)` yields a simd variable containing the values
+`points[i].x, points[i+1].x, points[i+2].x ...`.
+You can also assign a variable to `SIMD_ACCESS`, in which case the assignment is simdized.
+If `i` is an ordinary integral type, then `SIMD_ACCESS` translates to the appropriate scalar access.
+```c++
+// base: The base array.
+// index: The index to the base array. Can be a simd index or an ordinary integral index.
+// ...: Possible accessors to data members or elements of a subarray.
+#define SIMD_ACCESS(base, index, ...) \
+```
+`SIMD_ACCESS` can handle a lot of usual memory layouts:
+```c++
+double direct_array[100]    -> SIMD_ACCESS(direct_array, i)
+double sub_array[100][3]    -> SIMD_ACCESS(sub_array, i, [1])       // second element of the sub array
+Point pnt_array[100]        -> SIMD_ACCESS(pnt_array, i, .x)        // the x member
+Point pnt_sub_array[100][2] -> SIMD_ACCESS(pnt_sub_array, i, [0].x) // the x member of the first element of the sub array
+```
 
 ### The `sa::loop` Function
 
+The `sa::loop` function iterates over a given range of indices and calls a generic functor for each iteration.
+The functor is either called with a simd index or for the residual iterations with a scalar index.
+```c++
+// Iterates over a consecutive sequence of indices and calls a generic functor for each iteration.
+// SimdSize: Vector size.
+// start Start of the iteration range [start, end).
+// end End of the iteration range [start, end).
+// fn: Generic functor to be called. Takes one argument, whose type is either `index<SimdSize>`
+// or an integral type for the residual iterations.
+template<int SimdSize>
+void loop(std::integral auto start, std::integral auto end, auto&& fn);
+```
+
+In addition to consecutive ranges random index ranges are supported.
+```c++
+// Iterates over a sequence of random indices and calls a generic functor for each iteration.
+// SimdSize: Vector size.
+// indices: Array of indices.
+// fn: Generic functor to be called. Takes one argument, whose type is either `index_array<SimdSize, const std::integral*>`
+// or an integral type for the residual iterations.
+template<int SimdSize>
+void loop(const std::vector<std::integral>& indices, auto&& fn);
+```
+Since `SIMD_ACCESS` handles simd indices as well as scalar indices, you can write unified source code for simd and
+scalar types.
+Thus, now you can write simd and residual iterations in the same way:
+```c++
+  std::vector<Point> source, result;
+  auto simd_size = stdx::native_simd<double>::size()
+  sa::loop<simd_size>(0, source.size(), [&](auto i)
+    {
+      SIMD_ACCESS(result, i, .x) = SIMD_ACCESS(source, i, .x) * 2;
+    });
+```
+
 ### A globally overloadable subscription operator (`operator[]`)
 
+TODO
+
 ### An overloadable member access operator (`operator.`)
+
+TODO
 
 ### Build Requirements
 

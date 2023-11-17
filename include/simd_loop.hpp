@@ -18,7 +18,6 @@ namespace simd_access
  * Linear simd-ized iteration over a function. The function is first called with a simd index and the remainder
  * loop is called with an integral index.
  * @tparam SimdSize Vector size.
- * @tparam IntegralType Type of the range index.
  * @param start Start of the iteration range [start, end).
  * @param end End of the iteration range [start, end).
  * @param fn Generic function to be called. Takes one argument, whose type is either `index<SimdSize, IntegralType>`

@@ -19,7 +19,7 @@ namespace simd_access
   template<class U> auto operator op(const U& source) { return to_simd() op source; }
 
 #define VALUE_ACCESS_BIN_ASSIGNMENT_OP( op ) \
-  template<class U> void operator op##=(const U& source) { store<ElementSize>(base_, index_, to_simd() op source); }
+  template<class U> void operator op##=(const U& source) && { store<ElementSize>(base_, index_, to_simd() op source); }
 
 #define VALUE_ACCESS_MEMBER_OPS( op ) \
   VALUE_ACCESS_BIN_OP( op ) \
@@ -48,7 +48,7 @@ public:
    * Assign chains are not supported (i.e. the operator returns nothing).
    * @param source Simd value, whose content is written.
    */
-  void operator=(const stdx::fixed_size_simd<T, Index::size()>& source)
+  void operator=(const stdx::fixed_size_simd<T, Index::size()>& source) &&
   {
     store<ElementSize>(base_, index_, source);
   }
