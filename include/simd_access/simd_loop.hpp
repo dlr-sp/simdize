@@ -89,6 +89,46 @@ void loop(IteratorType start, const IteratorType& end, auto&& fn)
   }
 }
 
+
+/**
+ * Simd-ized iteration over a function using indirect indexing. The function is first called with an index_array
+ * and the remainder loop is called with an integral index.
+ * @tparam SimdSize Vector size.
+ * @param indices Array of indices.
+ * @param fn Generic function to be called. Takes two arguments. The first is the linear index starting at 0, the
+ *   type is either `index<SimdSize, size_t>` or `size_t`. The second argument is the indirect index, whose type is
+ *   either `index_array<SimdSize, const IntegralType*>` or `IntegralType`.
+ */
+template<int SimdSize, auto ... Args, std::random_access_iterator IteratorType>
+void loop_with_linear_index(IteratorType start, const IteratorType& end, auto&& fn)
+{
+  index_array<SimdSize, IteratorType> simd_i{start};
+  size_t i_end = end - start;
+  index<SimdSize, size_t> i{0};
+  for (; i.index_ + SimdSize < i_end + 1; i.index_ += SimdSize, simd_i.index_ += SimdSize)
+  {
+    if constexpr (sizeof...(Args) == 0)
+    {
+      fn(i, simd_i);
+    }
+    else
+    {
+      fn.template operator()<Args...>(i, simd_i);
+    }
+  }
+  for (; i.index_ < i_end; ++i.index_)
+  {
+    if constexpr (sizeof...(Args) == 0)
+    {
+      fn(i.index_, *(start + i.index_));
+    }
+    else
+    {
+      fn.template operator()<Args...>(i.index_, *(start + i.index_));
+    }
+  }
+}
+
 } //namespace simd_access
 
 #endif //SIMD_ACCESS_LOOP

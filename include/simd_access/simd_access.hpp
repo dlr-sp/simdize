@@ -36,10 +36,16 @@ auto get_base_address(auto& base_addr, const index_array<SimdSize, ArrayType>&)
   return &base_addr[0];
 }
 
-template<size_t ElementSize, class T, is_index IndexType>
-auto get_direct_value_access(T* base, const IndexType& index)
+template<size_t ElementSize, class T, int SimdSize, class IndexType>
+auto get_direct_value_access(T* base, const index<SimdSize, IndexType>&)
 {
-  return value_access<T, IndexType, ElementSize>(base, index);
+  return make_value_access<ElementSize>(linear_location<T, SimdSize>{base});
+}
+
+template<size_t ElementSize, class T, int SimdSize, class ArrayType>
+auto get_direct_value_access(T* base, const index_array<SimdSize, ArrayType>& indices)
+{
+  return make_value_access<ElementSize>(indexed_location<T, SimdSize, ArrayType>{base, indices.index_});
 }
 
 template<size_t ElementSize>

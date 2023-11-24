@@ -3,7 +3,6 @@
 /**
  * @file
  * @brief Class for accessing simd values via simd indices.
- * This file demonstrates a possible approach to overload the member access operator.
  */
 
 #ifndef SIMD_ACCESS_VALUE_ACCESS
@@ -16,30 +15,29 @@ namespace simd_access
 {
 
 #define VALUE_ACCESS_BIN_OP( op ) \
-  template<class U> auto operator op(const U& source) { return to_simd() op source; }
+  auto operator op(const auto& source) { return to_simd() op source; }
 
 #define VALUE_ACCESS_BIN_ASSIGNMENT_OP( op ) \
-  template<class U> void operator op##=(const U& source) && { store<ElementSize>(base_, index_, to_simd() op source); }
+  void operator op##=(const auto& source) && { store<ElementSize>(location_, to_simd() op source); }
 
 #define VALUE_ACCESS_MEMBER_OPS( op ) \
   VALUE_ACCESS_BIN_OP( op ) \
   VALUE_ACCESS_BIN_ASSIGNMENT_OP( op )
 
 #define VALUE_ACCESS_SCALAR_BIN_OP( op ) \
-  template<class T, class Index, size_t ElementSize> \
-  auto operator op(const std::type_identity_t<T>& o1, const value_access<T, Index, ElementSize>& o2) \
+  template<class Location, size_t ElementSize> \
+  auto operator op(const auto& o1, const value_access<Location, ElementSize>& o2) \
   { \
     return o1 op o2.to_simd(); \
   }
 
 /// Class representing a simd-access (read or write) to a memory location.
 /**
- * @tparam T Type of the value, that (or one of its members) is accessed.
- * @tparam Index Type of the simd index. May be `simd_index` or `simd_index_array`.
+ * @tparam Location Type of the location of the simd data.
  * @tparam ElementSize Size of the array elements, which (or one of its members) are accessed by the simd index.
  */
-template<class T, class Index, size_t ElementSize>
-class value_access : public member_overload<T, value_access<T, Index, ElementSize>>
+template<class Location, size_t ElementSize>
+class value_access : public member_overload<typename Location::value_type, value_access<Location, ElementSize>>
 {
 public:
   /// Assignment operator.
@@ -48,9 +46,9 @@ public:
    * Assign chains are not supported (i.e. the operator returns nothing).
    * @param source Simd value, whose content is written.
    */
-  void operator=(const stdx::fixed_size_simd<T, Index::size()>& source) &&
+  void operator=(const auto& source) &&
   {
-    store<ElementSize>(base_, index_, source);
+    store<ElementSize>(location_, source);
   }
 
   VALUE_ACCESS_MEMBER_OPS(+)
@@ -58,22 +56,22 @@ public:
   VALUE_ACCESS_MEMBER_OPS(*)
   VALUE_ACCESS_MEMBER_OPS(/)
 
-  /// Cast operator to a simd value.
-  /** Transforms this to a simd value.
-   * @return The simd-ized access represented by this transformed to a simd value.
-   */
-  operator stdx::fixed_size_simd<std::remove_const_t<T>, Index::size()>() const
-  {
-    return to_simd();
-  }
-
   /// Transforms this to a simd value.
   /**
    * @return The simd-ized access represented by this transformed to a simd value.
    */
   auto to_simd() const
   {
-    return load<ElementSize>(base_, index_);
+    return load<ElementSize>(location_);
+  }
+
+  /// Cast operator to a simd value.
+  /** Transforms this to a simd value.
+   * @return The simd-ized access represented by this transformed to a simd value.
+   */
+  operator auto() const
+  {
+    return to_simd();
   }
 
   /// Implementation of overloaded member operator, i.e. operator.()
@@ -85,30 +83,32 @@ public:
   template<auto Member>
   auto dot_overload()
   {
-    using ResultType = value_access<std::remove_reference_t<decltype(base_->*Member)>, Index, ElementSize>;
-    return ResultType(&(base_->*Member), index_);
+    return make_value_access<ElementSize>(location_.template member_access<Member>());
   }
 
   /// Implementation of subscript operator for accesses to sub-array elements, if `T` is an array type.
   /**
    * @return A `value_access` with a base address pointing to the accessed array element of `base_`.
    */
-  auto operator[](int i)
+  auto operator[](std::integral auto i)
   {
-    using ResultType = value_access<std::remove_pointer_t<decltype((*base_) + i)>, Index, ElementSize>;
-    return ResultType((*base_) + i, index_);
+    return make_value_access<ElementSize>(location_.array_access(i));
   }
 
   /// Constructor.
-  value_access(T* base, const Index& index) :
-    base_(base),
-    index_(index)
+  value_access(const Location& location) :
+    location_(location)
   {}
 
 private:
-  T* base_;
-  const Index& index_;
+  Location location_;
 };
+
+template<size_t ElementSize, class Location>
+auto make_value_access(const Location& location)
+{
+  return value_access<Location, ElementSize>(location);
+}
 
 VALUE_ACCESS_SCALAR_BIN_OP(+)
 VALUE_ACCESS_SCALAR_BIN_OP(-)

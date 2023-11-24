@@ -10,13 +10,12 @@
 
 #include <array>
 
-#include "simd_access/load_store.hpp"
-#include "simd_access/member_overload.hpp"
+#include "simd_access/location.hpp"
 
 namespace simd_access
 {
 
-template<class T, class Index, size_t ElementSize>
+template<class Location, size_t ElementSize>
 class value_access;
 
 /// Class representing a simd index to a consecutive sequence of elements.
@@ -24,7 +23,7 @@ class value_access;
  * @tparam SimdSize Length of the simd sequence.
  * @tparam IndexType Type of the index.
  */
-template<int SimdSize, class IndexType>
+template<int SimdSize, class IndexType = size_t>
 struct index
 {
   /// Return the length of the simd sequence.
@@ -45,7 +44,7 @@ struct index
   template<class T>
   auto operator[](T* data) const
   {
-    return value_access<T, index<SimdSize, IndexType>, sizeof(T)>(data + index_, *this);
+    return value_access<linear_location<T, SimdSize>, sizeof(T)>(linear_location<T, SimdSize>{data + index_});
   }
 };
 
@@ -57,7 +56,7 @@ struct index
  *   be stdx::fixed_size_simd<size_t, SimdSize>. Also size_t can be exchanged for another integral type.
  *   It is also possible to specify e.g. `int*` and thus use a pointer to a location in a larger array.
  */
-template<int SimdSize, class ArrayType>
+template<int SimdSize, class ArrayType = std::array<size_t, SimdSize>>
 struct index_array
 {
   /// Return the length of the simd sequence.
@@ -78,7 +77,8 @@ struct index_array
   template<class T>
   auto operator[](T* data) const
   {
-    return value_access<T, index_array<SimdSize, ArrayType>, sizeof(T)>{data, *this};
+    return value_access<indexed_location<T, SimdSize, ArrayType>, sizeof(T)>
+      (indexed_location<T, SimdSize, ArrayType>{data, index_});
   }
 };
 
