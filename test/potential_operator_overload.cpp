@@ -1,8 +1,8 @@
 
 #include <gtest/gtest.h>
 
-#include "simd_loop.hpp"
-#include "value_access.hpp"
+#include "simd_access/simd_loop.hpp"
+#include "simd_access/value_access.hpp"
 
 // This file is a compileable demo of a globally overloadable 'operator[]' and an overloadable member access
 // operator ('operator.'). The SIMD_ACCESS macro is not required.

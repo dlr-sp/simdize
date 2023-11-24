@@ -5,8 +5,8 @@
 #include <numeric>
 #include <random>
 
-#include "simd_access.hpp"
-#include "simd_loop.hpp"
+#include "simd_access/simd_access.hpp"
+#include "simd_access/simd_loop.hpp"
 
 namespace {
 
@@ -64,7 +64,7 @@ TEST(Loop, IndirectCopy)
   constexpr size_t vec_size = stdx::native_simd<double>::size();
 
   int linear_index = 0;
-  simd_access::loop<vec_size>(indices, [&](auto i)
+  simd_access::loop<vec_size>(indices.begin(), indices.end(), [&](auto i)
     {
       auto x = SIMD_ACCESS(src.a, i) * 1;
       simd_access::elementwise(x, [&](auto&& v)

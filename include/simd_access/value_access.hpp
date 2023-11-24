@@ -9,8 +9,8 @@
 #ifndef SIMD_ACCESS_VALUE_ACCESS
 #define SIMD_ACCESS_VALUE_ACCESS
 
-#include "member_overload.hpp"
-#include "load_store.hpp"
+#include "simd_access/member_overload.hpp"
+#include "simd_access/load_store.hpp"
 
 namespace simd_access
 {

@@ -10,8 +10,8 @@
 
 #include <array>
 
-#include "load_store.hpp"
-#include "member_overload.hpp"
+#include "simd_access/load_store.hpp"
+#include "simd_access/member_overload.hpp"
 
 namespace simd_access
 {

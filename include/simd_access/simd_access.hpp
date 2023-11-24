@@ -10,11 +10,11 @@
 
 #include <concepts>
 
-#include "element_access.hpp"
-#include "index.hpp"
-#include "load_store.hpp"
-#include "member_overload.hpp"
-#include "value_access.hpp"
+#include "simd_access/element_access.hpp"
+#include "simd_access/index.hpp"
+#include "simd_access/load_store.hpp"
+#include "simd_access/member_overload.hpp"
+#include "simd_access/value_access.hpp"
 
 namespace simd_access
 {

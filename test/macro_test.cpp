@@ -2,7 +2,7 @@
 #include <gtest/gtest.h>
 #include <vector>
 
-#include "simd_access.hpp"
+#include "simd_access/simd_access.hpp"
 
 namespace {
 
