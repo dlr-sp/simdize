@@ -40,8 +40,8 @@ for (int i = 0; i < size; ++i)
 ```
 In a scalar loop the three steps can and often will be intertwined.
 By using a simd library this becomes difficult, the steps are often separated.
-Then the second step can already be written in the same way for scalar and vectorized variables with the help of a
-simd library like `stdx::simd`.
+Then the second step can already be written in the same way for scalar and vectorized variables with the help of
+`stdx::simd`.
 C++ achieves this by deducing the matching operators according to the types of the variables created in the first step.
 
 The core idea of the `simd_access` library is now to push the boundary of the type deduction out of the three steps.
@@ -51,7 +51,7 @@ You don't use an integral type as loop index anymore, but a `simd_index`.
 Then step (1) and (3) both can deduce the matching operations according to the type of the index.
 In addition, it will once again be possible to intertwine all three steps for vectorized code in the way
 you are used to.
-A simplified version of `times2` (with improper residual loop handling) then could look as follows:
+A simplified version of `times2` (without residual loop handling) then could look as follows:
 ```c++
 void times2(int size, double* dest, const double* source)
 {
@@ -163,12 +163,25 @@ In addition to consecutive ranges random index ranges are supported.
 ```c++
 // Iterates over a sequence of random indices and calls a generic functor for each iteration.
 // SimdSize: Vector size.
-// indices: Array of indices.
-// fn: Generic functor to be called. Takes one argument, whose type is either `index_array<SimdSize, const std::integral*>`
-// or an integral type for the residual iterations.
-template<int SimdSize>
-void loop(const std::vector<std::integral>& indices, auto&& fn);
+// [start, end): Range containing the indices.
+// fn: Generic functor to be called. Takes one argument, whose type is either `index_array<SimdSize, IteratorType>`
+//   or an integral type for the residual iterations.
+template<int SimdSize, std::random_access_iterator IteratorType>
+void loop(IteratorType start, const IteratorType& end, auto&& fn);
 ```
+Sometimes it is necessary to iterate over a random index range, whereby you also get the linear indices.
+In that case you can use `loop_with_linear_index`:
+```c++
+// Iterates over a sequence of random indices and calls a generic functor for each iteration.
+// SimdSize: Vector size.
+// [start, end): Range containing the indices.
+// fn: Generic functor to be called. Takes two arguments. The first is the linear index starting at 0, its
+//   type is either `index<SimdSize, size_t>` or `size_t`. The second argument is the indirect index, its type is
+//   either `index_array<SimdSize, IteratorType>` or `IntegralType`.
+template<int SimdSize, std::random_access_iterator IteratorType>
+void loop_with_linear_index(IteratorType start, const IteratorType& end, auto&& fn)
+```
+
 Since `SIMD_ACCESS` handles simd indices as well as scalar indices, you can write unified source code for simd and
 scalar types.
 Thus, now you can write simd and residual iterations in the same way:

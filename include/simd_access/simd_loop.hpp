@@ -56,9 +56,12 @@ void loop(std::integral auto start, std::integral auto end, auto&& fn)
  * Simd-ized iteration over a function using indirect indexing. The function is first called with an index_array
  * and the remainder loop is called with an integral index.
  * @tparam SimdSize Vector size.
- * @param indices Array of indices.
+ * @tparam Args Optional additional template arguments passed to the function call operator.
+ * @tparam IteratorType Deduced type of the random access iterator defining the range of indices.
+ * @param start Inclusive start of the range of indices.
+ * @param end Exclusive end of the range of indices.
  * @param fn Generic function to be called. Takes one argument, whose type is either
- *   `index_array<SimdSize, const IntegralType*>` or `IntegralType`.
+ *   `index_array<SimdSize, IteratorType>` or `IntegralType`.
  */
 template<int SimdSize, auto ... Args, std::random_access_iterator IteratorType>
 void loop(IteratorType start, const IteratorType& end, auto&& fn)
@@ -94,10 +97,13 @@ void loop(IteratorType start, const IteratorType& end, auto&& fn)
  * Simd-ized iteration over a function using indirect indexing. The function is first called with an index_array
  * and the remainder loop is called with an integral index.
  * @tparam SimdSize Vector size.
- * @param indices Array of indices.
- * @param fn Generic function to be called. Takes two arguments. The first is the linear index starting at 0, the
- *   type is either `index<SimdSize, size_t>` or `size_t`. The second argument is the indirect index, whose type is
- *   either `index_array<SimdSize, const IntegralType*>` or `IntegralType`.
+ * @tparam Args Optional additional template arguments passed to the function call operator.
+ * @tparam IteratorType Deduced type of the random access iterator defining the range of indices.
+ * @param start Inclusive start of the range of indices.
+ * @param end Exclusive end of the range of indices.
+ * @param fn Generic function to be called. Takes two arguments. The first is the linear index starting at 0, its
+ *   type is either `index<SimdSize, size_t>` or `size_t`. The second argument is the indirect index, its type is
+ *   either `index_array<SimdSize, IteratorType>` or `IntegralType`.
  */
 template<int SimdSize, auto ... Args, std::random_access_iterator IteratorType>
 void loop_with_linear_index(IteratorType start, const IteratorType& end, auto&& fn)
