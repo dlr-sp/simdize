@@ -8,16 +8,12 @@
 #ifndef SIMD_LOAD_STORE
 #define SIMD_LOAD_STORE
 
-#include <array>
-#include <experimental/simd>
-namespace stdx = std::experimental;
-
+#include "simd_access/base.hpp"
 #include "simd_access/location.hpp"
 
 namespace simd_access
 {
 
-template<typename T> concept arithmetic = std::is_arithmetic_v<T>;
 /**
  * Stores a simd value to a memory location defined by a base address and an linear index. The simd elements are
  * stored at the positions base, base+ElementSize, base+2*ElementSize, ...
@@ -27,7 +23,7 @@ template<typename T> concept arithmetic = std::is_arithmetic_v<T>;
  * @param location Address of the memory location, at which the first simd element is stored.
  * @param source Simd value to be stored.
  */
-template<size_t ElementSize, arithmetic T, int SimdSize>
+template<size_t ElementSize, simd_arithmetic T, int SimdSize>
 inline void store(const linear_location<T, SimdSize>& location, const stdx::fixed_size_simd<T, SimdSize>& source)
 {
   if constexpr (sizeof(T) == ElementSize)
@@ -54,7 +50,7 @@ inline void store(const linear_location<T, SimdSize>& location, const stdx::fixe
  * @param location Address and indices of the memory location.
  * @param source Simd value to be stored.
  */
-template<size_t ElementSize, arithmetic T, int SimdSize, class ArrayType>
+template<size_t ElementSize, simd_arithmetic T, int SimdSize, class ArrayType>
 inline void store(const indexed_location<T, SimdSize, ArrayType>& location,
   const stdx::fixed_size_simd<T, SimdSize>& source)
 {
@@ -74,7 +70,7 @@ inline void store(const indexed_location<T, SimdSize, ArrayType>& location,
  * @param location Address of the memory location, at which the first simd element is stored.
  * @return A simd value.
  */
-template<size_t ElementSize, arithmetic T, int SimdSize>
+template<size_t ElementSize, simd_arithmetic T, int SimdSize>
 inline auto load(const linear_location<T, SimdSize>& location)
 {
   using ResultType = stdx::fixed_size_simd<std::remove_const_t<T>, SimdSize>;
@@ -102,7 +98,7 @@ inline auto load(const linear_location<T, SimdSize>& location)
  * @param location Address and indices of the memory location.
  * @return A simd value.
  */
-template<size_t ElementSize, arithmetic T, int SimdSize, class ArrayType>
+template<size_t ElementSize, simd_arithmetic T, int SimdSize, class ArrayType>
 inline auto load(const indexed_location<T, SimdSize, ArrayType>& location)
 {
   // gather with indirect indices

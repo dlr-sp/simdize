@@ -1,4 +1,5 @@
 
+#include <experimental/bits/simd.h>
 #include <gtest/gtest.h>
 #include <vector>
 
@@ -97,3 +98,30 @@ TEST(Macro, IndirectVectorizedArrayAccess)
   }
 }
 
+
+TEST(Macro, SimdVectorizedArrayAccess)
+{
+  TestData t;
+
+  constexpr size_t vec_size = stdx::native_simd<double>::size();
+  stdx::fixed_size_simd<size_t, vec_size> index;
+  for (size_t i = 0; i < vec_size; ++i)
+  {
+    index[i] = vec_size - i + 3;
+  }
+
+  stdx::fixed_size_simd<double, vec_size> x_a = SIMD_ACCESS(t.a, index);
+  stdx::fixed_size_simd<double, vec_size> x_a_arr = SIMD_ACCESS(t.a_subarr, index, [0]);
+  stdx::fixed_size_simd<double, vec_size> x_s_x = SIMD_ACCESS(t.s, index, .x);
+  stdx::fixed_size_simd<double, vec_size> x_s_y = SIMD_ACCESS(t.s, index, .y[0]);
+  stdx::fixed_size_simd<double, vec_size> x_v = SIMD_ACCESS(t.v, index);
+
+  for (int i = 0; i < vec_size; ++i)
+  {
+    EXPECT_EQ(x_a[i], vec_size - i + 3);
+    EXPECT_EQ(x_a_arr[i], vec_size - i + 3);
+    EXPECT_EQ(x_s_x[i], vec_size - i + 3);
+    EXPECT_EQ(x_s_y[i], vec_size - i + 3);
+    EXPECT_EQ(x_v[i], vec_size - i + 3);
+  }
+}

@@ -50,3 +50,30 @@ TEST(Elementwise, SimpleWrite)
   EXPECT_EQ(dest_s, 5);
 }
 
+TEST(Elementwise, SingleElementAccess)
+{
+  double source[5] = { 1, 2, 3, 4, 5 };
+  double scalar_source = 6;
+  constexpr size_t vec_size = 4;
+  stdx::fixed_size_simd<double, vec_size> x(source, stdx::element_aligned);
+
+  EXPECT_EQ(simd_access::get_element<0>(x), 1);
+  EXPECT_EQ(simd_access::get_element<1>(x), 2);
+  EXPECT_EQ(simd_access::get_element<2>(x), 3);
+  EXPECT_EQ(simd_access::get_element<3>(x), 4);
+  EXPECT_EQ(simd_access::get_element<0>(scalar_source), 6);
+}
+
+TEST(Elementwise, SingleElementAccessUniversalSimd)
+{
+  simd_access::auto_simd_t<std::string, 3> custom_simd;
+  custom_simd[0] = "Hi";
+
+  EXPECT_EQ(simd_access::get_element<0>(custom_simd), "Hi");
+  EXPECT_EQ(simd_access::get_element<1>(custom_simd), "");
+  EXPECT_EQ(simd_access::get_element<2>(custom_simd), "");
+
+  EXPECT_EQ(&simd_access::get_element<0>(custom_simd), &custom_simd[0]);
+  EXPECT_EQ(&simd_access::get_element<1>(custom_simd), &custom_simd[1]);
+  EXPECT_EQ(&simd_access::get_element<2>(custom_simd), &custom_simd[2]);
+}

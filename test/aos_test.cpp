@@ -1,9 +1,5 @@
 
 #include <gtest/gtest.h>
-#include <vector>
-#include <algorithm>
-#include <numeric>
-#include <random>
 
 #include "simd_access/simd_access.hpp"
 #include "simd_access/simd_loop.hpp"
@@ -93,4 +89,3 @@ TEST(AosTest, IndirectAddition)
     EXPECT_EQ(dest[i].y, expected_result.y);
   }
 }
-

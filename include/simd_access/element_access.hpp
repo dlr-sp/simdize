@@ -8,16 +8,10 @@
 #ifndef SIMD_ACCESS_ELEMENT_ACCESS
 #define SIMD_ACCESS_ELEMENT_ACCESS
 
-#include <concepts>
-#include <experimental/simd>
-namespace stdx = std::experimental;
+#include "simd_access/base.hpp"
 
 namespace simd_access
 {
-
-template<class PotentialIndexType>
-concept is_simd =
-  requires(PotentialIndexType x) { []<class T, class Abi>(stdx::simd<T, Abi>&){}(x); };
 
 /**
  * Call a function for each scalar of a simd value.
@@ -66,6 +60,33 @@ template<class T>
 std::remove_reference_t<T>&& element_write(T&& x)
 {
   return static_cast<typename std::remove_reference<T>::type&&>(x) ;
+}
+
+/**
+ * Returns a particular element of a simd type. This overload for non-simd types returns the passed value as
+ * first element. For other elements the program is ill-formed.
+ * @tparam I Number of the element. Must be 0.
+ * @param x Value.
+ * @return Constant reference to `x`.
+ */
+template<int I>
+const auto& get_element(const auto& x)
+{
+  static_assert(I == 0);
+  return x;
+}
+
+/**
+ * Returns a particular element of a simd type.
+ * @tparam I Number of the element. Must be smaller then `x.size()`.
+ * @param x Simd value.
+ * @return Value of `x[I]`.
+ */
+template<int I>
+decltype(auto) get_element(const is_simd auto& x)
+{
+  static_assert(I < x.size());
+  return x[I];
 }
 
 } //namespace simd_access

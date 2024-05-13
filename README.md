@@ -100,7 +100,7 @@ struct sa::index
 };
 ```
 
-The class `sa::index` represents a simd access to randomly indexed elements.
+The class `sa::index_array` represents a simd access to randomly indexed elements.
 ```c++
 // SimdSize: Length of the simd sequence.
 // ArrayType: Type of the array, which stores the indices. Can also be a pointer into a larger array of indices.

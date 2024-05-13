@@ -8,8 +8,7 @@
 #ifndef SIMD_ACCESS_INDEX
 #define SIMD_ACCESS_INDEX
 
-#include <array>
-
+#include "simd_access/base.hpp"
 #include "simd_access/location.hpp"
 
 namespace simd_access
@@ -30,7 +29,14 @@ struct index
   /**
    * @return The length of the simd sequence.
    */
-  static constexpr size_t size() { return SimdSize; }
+  static constexpr int size() { return SimdSize; }
+
+  /// Return the scalar index of a vector lane.
+  /**
+   * @param i Index in the vector must be in the range [0, SimdSize) .
+   * @return The scalar index at vector lane i, i.e. index_ + i.
+   */
+  auto scalar_index(int i) const { return index_ + IndexType(i); }
 
   /// The index, at which the sequence starts.
   IndexType index_;
@@ -46,10 +52,19 @@ struct index
   {
     return value_access<linear_location<T, SimdSize>, sizeof(T)>(linear_location<T, SimdSize>{data + index_});
   }
+
+  /// Transforms this to a simd value.
+  /**
+   * @return The value represented by this transformed to a simd value.
+   */
+  auto to_simd() const
+  {
+    return stdx::fixed_size_simd<IndexType, SimdSize>([this](auto i){ return index_ + i;});
+  }
 };
 
 
-/// Class representing a simd index to a indirect indexed elements in an array.
+/// Class representing a simd index to indirect indexed elements in an array.
 /**
  * @tparam SimdSize Length of the simd sequence.
  * @tparam ArrayType Type of the array, which stores the indices. Defaults to std::array<size_t, SimdSize>, but could
@@ -63,7 +78,14 @@ struct index_array
   /**
    * @return The length of the simd sequence.
    */
-  static constexpr size_t size() { return SimdSize; }
+  static constexpr int size() { return SimdSize; }
+
+  /// Return the scalar index of a vector lane.
+  /**
+   * @param i Index in the vector must be in the range [0, SimdSize) .
+   * @return The scalar index at vector lane i, i.e. index_[i].
+   */
+  auto scalar_index(int i) { return index_[i]; }
 
   /// The index array, the n'th entry defines the index of the n'th element in the simd type.
   ArrayType index_;

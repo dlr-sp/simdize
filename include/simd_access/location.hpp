@@ -8,6 +8,9 @@
 #ifndef SIMD_ACCESS_LOCATION
 #define SIMD_ACCESS_LOCATION
 
+#include <type_traits>
+#include <concepts>
+
 namespace simd_access
 {
 

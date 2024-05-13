@@ -10,6 +10,7 @@
 
 #include <concepts>
 
+#include "simd_access/base.hpp"
 #include "simd_access/element_access.hpp"
 #include "simd_access/index.hpp"
 #include "simd_access/load_store.hpp"
@@ -36,6 +37,11 @@ auto get_base_address(auto& base_addr, const index_array<SimdSize, ArrayType>&)
   return &base_addr[0];
 }
 
+auto get_base_address(auto& base_addr, const is_stdx_simd auto& i)
+{
+  return &base_addr[0];
+}
+
 template<size_t ElementSize, class T, int SimdSize, class IndexType>
 auto get_direct_value_access(T* base, const index<SimdSize, IndexType>&)
 {
@@ -52,6 +58,12 @@ template<size_t ElementSize>
 auto& get_direct_value_access(auto* base, std::integral auto)
 {
   return *base;
+}
+
+template<size_t ElementSize, class T, class IndexType, class Abi>
+auto get_direct_value_access(T* base, const stdx::simd<IndexType, Abi>& i)
+{
+  return make_value_access<ElementSize>(indexed_location<T, i.size(), stdx::simd<IndexType, Abi>>{base, i});
 }
 
 } //namespace simd_access

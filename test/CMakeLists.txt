@@ -3,6 +3,7 @@ enable_testing()
 add_executable(
   simd_access_test
   elementwise_test.cpp
+  index_test.cpp
   loop_test.cpp
   macro_test.cpp
   potential_operator_overload.cpp

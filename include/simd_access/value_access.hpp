@@ -36,7 +36,7 @@ namespace simd_access
  * @tparam Location Type of the location of the simd data.
  * @tparam ElementSize Size of the array elements, which (or one of its members) are accessed by the simd index.
  */
-template<class Location, size_t ElementSize>
+template<class Location, size_t ElementSize = 0>
 class value_access : public member_overload<typename Location::value_type, value_access<Location, ElementSize>>
 {
 public:
