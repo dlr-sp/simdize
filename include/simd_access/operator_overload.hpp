@@ -2,21 +2,18 @@
 
 /**
  * @file
- * @brief Base class for member operator overload
+ * @brief Base class for operator overloads
  * This file demonstrates a possible approach to overload the member access operator.
  */
 
-#ifndef SIMD_ACCESS_MEMBER_OVERLOAD
-#define SIMD_ACCESS_MEMBER_OVERLOAD
+#ifndef SIMD_ACCESS_OPERATOR_OVERLOAD
+#define SIMD_ACCESS_OPERATOR_OVERLOAD
 
 #include <type_traits>
+#include "base.hpp"
 
 namespace simd_access
 {
-
-/// class concept: if fulfilled, T is syntactically allowed to have members.
-template<class T> concept is_class = std::is_class_v<T>;
-template<class T> concept is_not_class = !std::is_class_v<T>;
 
 /// Base class for overloaded member operator.
 /**
@@ -30,11 +27,11 @@ template<typename T, typename Derived>
 struct member_overload;
 
 /// Empty specialization for non-class types. Avoids syntax errors on the template parameter for any non-class T.
-template<is_not_class T, typename Derived>
+template<typename T, typename Derived> requires (!std::is_class_v<T>)
 struct member_overload<T, Derived> {};
 
 /// Specialization for class types.
-template<is_class T, typename Derived>
+template<typename T, typename Derived> requires (std::is_class_v<T>)
 struct member_overload<T, Derived>
 {
   /// Overloaded member operator, i.e. operator.()
@@ -52,6 +49,34 @@ struct member_overload<T, Derived>
   }
 };
 
+/// Base class for overloaded type cast operator.
+/**
+ * This CRTP base class restricts the availability of the cast `operator auto()` to value types, which can be simd
+ * value types. This prevents instantiation errors (gcc #115216).
+ * @tparam T Type of scalar value.
+ * @tparam Derived subclass of this class. It provides a member function `to_simd`.
+ */
+template<typename T, typename Derived>
+struct cast_overload;
+
+/// Empty specialization for non-simd_arithmetic types. There is no implicit cast to a simd type.
+template<typename T, typename Derived> requires(!simd_arithmetic<T>)
+struct cast_overload<T, Derived> {};
+
+/// Specialization for simd_arithmetic types.
+template<simd_arithmetic T, typename Derived>
+struct cast_overload<T, Derived>
+{
+  /// Cast operator to a simd value.
+  /** Transforms this to a simd value.
+   * @return The simd-ized access represented by this transformed to a simd value.
+   */
+  operator auto() const
+  {
+    return (static_cast<const Derived*>(this))->to_simd();
+  }
+};
+
 } //namespace simd_access
 
-#endif //SIMD_ACCESS_MEMBER_OVERLOAD
+#endif //SIMD_ACCESS_OPERATOR_OVERLOAD

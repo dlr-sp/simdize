@@ -9,7 +9,6 @@
 #define SIMD_ACCESS_LOCATION
 
 #include <type_traits>
-#include <concepts>
 
 namespace simd_access
 {
@@ -26,9 +25,9 @@ struct linear_location
     return linear_location<std::remove_reference_t<decltype(std::declval<T>().*Member)>, SimdSize>{&(base_->*Member)};
   }
 
-  auto array_access(std::integral auto i) const
+  auto array_access(auto i) const
   {
-    return linear_location<std::remove_pointer_t<decltype(*std::declval<T>())>, SimdSize>{(*base_) + i};
+    return linear_location<std::remove_reference_t<decltype((*base_)[i])>, SimdSize>{&((*base_)[i])};
   }
 };
 
@@ -46,10 +45,10 @@ struct indexed_location
       {&(base_->*Member), indices_};
   }
 
-  auto array_access(std::integral auto i) const
+  auto array_access(auto i) const
   {
-    return indexed_location<std::remove_pointer_t<decltype(*std::declval<T>())>, SimdSize, ArrayType>
-      {(*base_) + i, indices_};
+    return indexed_location<std::remove_reference_t<decltype((*base_)[i])>, SimdSize, ArrayType>
+      {&((*base_)[i]), indices_};
   }
 };
 
@@ -69,12 +68,12 @@ struct random_location
     }
   }
 
-  auto array_access(std::integral auto i) const
+  auto array_access(auto i) const
   {
     random_location<std::remove_pointer_t<decltype(*std::declval<T>())>, SimdSize> result;
     for (int k = 0; k < SimdSize; ++k)
     {
-      result.base_[k] = (*base_[k]) + i;
+      result.base_[k] = &((*base_[k])[i]);
     }
   }
 };

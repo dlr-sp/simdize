@@ -147,7 +147,8 @@ Point pnt_sub_array[100][2] -> SIMD_ACCESS(pnt_sub_array, i, [0].x) // the x mem
 ### The `sa::loop` Function
 
 The `sa::loop` function iterates over a given range of indices and calls a generic functor for each iteration.
-The functor is either called with a simd index or for the residual iterations with a scalar index.
+The functor is either called with a simd index or for the residual iterations with a scalar index
+(by default, see below).
 ```c++
 // Iterates over a consecutive sequence of indices and calls a generic functor for each iteration.
 // SimdSize: Vector size.
@@ -193,6 +194,27 @@ Thus, now you can write simd and residual iterations in the same way:
       SIMD_ACCESS(result, i, .x) = SIMD_ACCESS(source, i, .x) * 2;
     });
 ```
+
+Residual iterations occur, if the iteration range is not a multiple of SimdSize.
+`sa::loop` treat indices at the end of the range as residual iterations.
+By default, these iterations are called with a scalar index.
+However, for integral ranges the `residualLoopPolicy` lets you control this behavior.
+If it is set to `VectorResidualLoop`, residual iterations are also called with a simd index.
+In that case the simd index might include indices beyond your actual iteration range.
+It is up to you how to handle these beyond-the-end indices.
+You might have introduced padding, use masking or just know, that there are no residual iterations.
+If you use `VectorResidualLoop`, the loop body is not instantiated for scalar indices.
+```c++
+  double source[64];
+  auto simd_size = stdx::native_simd<double>::size()
+  // We know, that the iteration range is a multiple of the simd size:
+  sa::loop<simd_size>(0, 64, [&](auto i)
+    {
+      // i is always of type sa::index<simd_size>, so to_simd() is safely available
+      auto x = SIMD_ACCESS(source, i).to_simd();
+    }, VectorResidualLoop);
+```
+
 
 ### A globally overloadable subscription operator (`operator[]`)
 

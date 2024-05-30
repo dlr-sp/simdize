@@ -8,7 +8,7 @@
 #ifndef SIMD_ACCESS_VALUE_ACCESS
 #define SIMD_ACCESS_VALUE_ACCESS
 
-#include "simd_access/member_overload.hpp"
+#include "simd_access/operator_overload.hpp"
 #include "simd_access/load_store.hpp"
 
 namespace simd_access
@@ -37,7 +37,9 @@ namespace simd_access
  * @tparam ElementSize Size of the array elements, which (or one of its members) are accessed by the simd index.
  */
 template<class Location, size_t ElementSize = 0>
-class value_access : public member_overload<typename Location::value_type, value_access<Location, ElementSize>>
+class value_access :
+  public member_overload<typename Location::value_type, value_access<Location, ElementSize>>,
+  public cast_overload<typename Location::value_type, value_access<Location, ElementSize>>
 {
 public:
   /// Assignment operator.
@@ -65,15 +67,6 @@ public:
     return load<ElementSize>(location_);
   }
 
-  /// Cast operator to a simd value.
-  /** Transforms this to a simd value.
-   * @return The simd-ized access represented by this transformed to a simd value.
-   */
-  operator auto() const
-  {
-    return to_simd();
-  }
-
   /// Implementation of overloaded member operator, i.e. operator.()
   /**
    * Since `T` might be of non-class type, one cannot specify `auto T::*Member` as a template argument here.
@@ -86,11 +79,12 @@ public:
     return make_value_access<ElementSize>(location_.template member_access<Member>());
   }
 
-  /// Implementation of subscript operator for accesses to sub-array elements, if `T` is an array type.
+  /// Implementation of subscript operator for accesses to sub-array elements of `Location::value_type`.
   /**
+   * @param i An index usable as index type for sub-array elements of `Location::value_type`.
    * @return A `value_access` with a base address pointing to the accessed array element of `base_`.
    */
-  auto operator[](std::integral auto i)
+  auto operator[](auto i) const
   {
     return make_value_access<ElementSize>(location_.array_access(i));
   }

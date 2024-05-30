@@ -79,4 +79,41 @@ TEST(Loop, IndirectCopy)
   }
 }
 
+TEST(Loop, ResidualLoop)
+{
+  constexpr auto full_size = 64;
+  constexpr auto dest_offset = 1001;
+  constexpr size_t vec_size = stdx::native_simd<double>::size();
+  constexpr size_t partial_size = full_size - vec_size + 1;
+  double src[full_size], dest[full_size];
+  auto fill_dest = [&]()
+    { std::iota(dest, dest + full_size, dest_offset); };
+
+  std::iota(src, src + full_size, 0);
+  fill_dest();
+  simd_access::loop<vec_size>(0, partial_size, [&](auto i)
+    {
+      SIMD_ACCESS(dest, i) = SIMD_ACCESS(src, i) * 2;
+    });
+
+  for (int i = 0; i < partial_size; ++i)
+  {
+    EXPECT_EQ(dest[i], i * 2);
+  }
+  for (int i = partial_size; i < full_size; ++i)
+  {
+    EXPECT_EQ(dest[i], dest_offset + i);
+  }
+
+  fill_dest();
+  simd_access::loop<vec_size>(0, partial_size, [&](auto i)
+    {
+      SIMD_ACCESS(dest, i) = SIMD_ACCESS(src, i) * 2;
+    }, simd_access::VectorResidualLoop);
+
+  for (int i = 0; i < full_size; ++i)
+  {
+    EXPECT_EQ(dest[i], i * 2);
+  }
+}
 

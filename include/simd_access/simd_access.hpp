@@ -14,25 +14,24 @@
 #include "simd_access/element_access.hpp"
 #include "simd_access/index.hpp"
 #include "simd_access/load_store.hpp"
-#include "simd_access/member_overload.hpp"
 #include "simd_access/value_access.hpp"
 
 namespace simd_access
 {
 
-auto get_base_address(auto& base_addr, std::integral auto i)
+auto get_base_address(auto&& base_addr, std::integral auto i)
 {
   return &base_addr[i];
 }
 
 template<int SimdSize, class IndexType>
-auto get_base_address(auto& base_addr, const index<SimdSize, IndexType>& i)
+auto get_base_address(auto&& base_addr, const index<SimdSize, IndexType>& i)
 {
   return &base_addr[i.index_];
 }
 
 template<int SimdSize, class ArrayType>
-auto get_base_address(auto& base_addr, const index_array<SimdSize, ArrayType>&)
+auto get_base_address(auto&& base_addr, const index_array<SimdSize, ArrayType>&)
 {
   return &base_addr[0];
 }
