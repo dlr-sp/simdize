@@ -38,8 +38,8 @@ for (int i = 0; i < size; ++i)
   // (3) store results to locations associated with i
 }
 ```
-In a scalar loop the three steps can and often will be intertwined.
-By using a simd library this becomes difficult, the steps are often separated.
+In a scalar loop the three steps can and often will be intertwined as in `dest[i] = source[i] * 2;`.
+By using a simd data type these three steps become separated, since loading and storing require a more explicit syntax.
 Then the second step can already be written in the same way for scalar and vectorized variables with the help of
 `stdx::simd`.
 C++ achieves this by deducing the matching operators according to the types of the variables created in the first step.

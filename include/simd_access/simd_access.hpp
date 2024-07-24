@@ -65,6 +65,16 @@ auto get_direct_value_access(T* base, const stdx::simd<IndexType, Abi>& i)
   return make_value_access<ElementSize>(indexed_location<T, i.size(), stdx::simd<IndexType, Abi>>{base, i});
 }
 
+/**
+ * This function mocks a globally overloaded operator[]. It can be used instead of the SIMD_ACCESS macro,
+ * if no named member is accessed.
+ */
+template<class T, class IndexType>
+auto sa(T&& base, const IndexType& index)
+{
+  return get_direct_value_access<sizeof(decltype(base[0]))>(get_base_address(base, index), index);
+}
+
 } //namespace simd_access
 
 

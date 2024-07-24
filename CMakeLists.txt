@@ -30,6 +30,7 @@ include_directories(${PROJECT_SOURCE_DIR}/include)
 
 
 enable_testing()
+add_compile_options ( -march=native )
 
 # Build the tests
 add_subdirectory(test)
