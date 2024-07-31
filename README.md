@@ -144,6 +144,15 @@ Point pnt_array[100]        -> SIMD_ACCESS(pnt_array, i, .x)        // the x mem
 Point pnt_sub_array[100][2] -> SIMD_ACCESS(pnt_sub_array, i, [0].x) // the x member of the first element of the sub array
 ```
 
+#### Shortcomings
+
+`SIMD_ACCESS` expects a contiguous array as `base` with an valid element at index 0.
+The type yielded by `SIMD_ACCESS` is not a `stdx::simd`, but provides a type conversion operator and an
+assignment operator.
+Thus `SIMD_ACCESS` can be used as rvalue as well as lvalue.
+In deduced contexts a `stdx::simd` is necessary as rvalue. Use `SIMD_ACCESS_V` in that case.
+
+
 ### The `sa::loop` Function
 
 The `sa::loop` function iterates over a given range of indices and calls a generic functor for each iteration.

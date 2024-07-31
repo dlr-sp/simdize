@@ -26,7 +26,7 @@ namespace simd_access
 
 #define VALUE_ACCESS_SCALAR_BIN_OP( op ) \
   template<class Location, size_t ElementSize> \
-  auto operator op(const auto& o1, const value_access<Location, ElementSize>& o2) \
+  inline auto operator op(const auto& o1, const value_access<Location, ElementSize>& o2) \
   { \
     return o1 op o2.to_simd(); \
   }
@@ -99,7 +99,7 @@ private:
 };
 
 template<size_t ElementSize, class Location>
-auto make_value_access(const Location& location)
+inline auto make_value_access(const Location& location)
 {
   return value_access<Location, ElementSize>(location);
 }
@@ -108,6 +108,10 @@ VALUE_ACCESS_SCALAR_BIN_OP(+)
 VALUE_ACCESS_SCALAR_BIN_OP(-)
 VALUE_ACCESS_SCALAR_BIN_OP(*)
 VALUE_ACCESS_SCALAR_BIN_OP(/)
+
+template<class PotentialSimdType>
+concept has_to_simd =
+  requires(PotentialSimdType x) { x.to_simd(); };
 
 } //namespace simd_access
 

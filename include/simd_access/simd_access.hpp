@@ -19,48 +19,48 @@
 namespace simd_access
 {
 
-auto get_base_address(auto&& base_addr, std::integral auto i)
+inline auto get_base_address(auto&& base_addr, std::integral auto i)
 {
   return &base_addr[i];
 }
 
 template<int SimdSize, class IndexType>
-auto get_base_address(auto&& base_addr, const index<SimdSize, IndexType>& i)
+inline auto get_base_address(auto&& base_addr, const index<SimdSize, IndexType>& i)
 {
   return &base_addr[i.index_];
 }
 
 template<int SimdSize, class ArrayType>
-auto get_base_address(auto&& base_addr, const index_array<SimdSize, ArrayType>&)
+inline auto get_base_address(auto&& base_addr, const index_array<SimdSize, ArrayType>&)
 {
   return &base_addr[0];
 }
 
-auto get_base_address(auto& base_addr, const is_stdx_simd auto& i)
+inline auto get_base_address(auto& base_addr, const is_stdx_simd auto& i)
 {
   return &base_addr[0];
 }
 
 template<size_t ElementSize, class T, int SimdSize, class IndexType>
-auto get_direct_value_access(T* base, const index<SimdSize, IndexType>&)
+inline auto get_direct_value_access(T* base, const index<SimdSize, IndexType>&)
 {
   return make_value_access<ElementSize>(linear_location<T, SimdSize>{base});
 }
 
 template<size_t ElementSize, class T, int SimdSize, class ArrayType>
-auto get_direct_value_access(T* base, const index_array<SimdSize, ArrayType>& indices)
+inline auto get_direct_value_access(T* base, const index_array<SimdSize, ArrayType>& indices)
 {
   return make_value_access<ElementSize>(indexed_location<T, SimdSize, ArrayType>{base, indices.index_});
 }
 
 template<size_t ElementSize>
-auto& get_direct_value_access(auto* base, std::integral auto)
+inline auto& get_direct_value_access(auto* base, std::integral auto)
 {
   return *base;
 }
 
 template<size_t ElementSize, class T, class IndexType, class Abi>
-auto get_direct_value_access(T* base, const stdx::simd<IndexType, Abi>& i)
+inline auto get_direct_value_access(T* base, const stdx::simd<IndexType, Abi>& i)
 {
   return make_value_access<ElementSize>(indexed_location<T, i.size(), stdx::simd<IndexType, Abi>>{base, i});
 }
@@ -70,9 +70,21 @@ auto get_direct_value_access(T* base, const stdx::simd<IndexType, Abi>& i)
  * if no named member is accessed.
  */
 template<class T, class IndexType>
-auto sa(T&& base, const IndexType& index)
+inline auto sa(T&& base, const IndexType& index)
 {
   return get_direct_value_access<sizeof(decltype(base[0]))>(get_base_address(base, index), index);
+}
+
+template<has_to_simd T>
+inline auto to_simd(const T& value)
+{
+  return value.to_simd();
+}
+
+template<class T> requires(!has_to_simd<T>)
+inline auto to_simd(T&& value)
+{
+  return value;
 }
 
 } //namespace simd_access
@@ -89,5 +101,8 @@ auto sa(T&& base, const IndexType& index)
 #define SIMD_ACCESS(base, index, ...) \
   simd_access::get_direct_value_access<sizeof(decltype(base[0]))>( \
     &((*simd_access::get_base_address(base, index)) __VA_ARGS__), index)
+
+
+#define SIMD_ACCESS_V(...) simd_access::to_simd(SIMD_ACCESS(__VA_ARGS__))
 
 #endif //SIMD_ACCESS_MAIN

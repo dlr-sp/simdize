@@ -34,7 +34,7 @@ constexpr auto VectorResidualLoop = VectorResidualLoopT();
  *   to `ScalarResidualLoop`.
  */
 template<int SimdSize, auto ... Args, typename ResidualLoopPolicyType = ScalarResidualLoopT>
-void loop(std::integral auto start, std::integral auto end, auto&& fn,
+inline void loop(std::integral auto start, std::integral auto end, auto&& fn,
   ResidualLoopPolicyType residualLoopPolicy = ScalarResidualLoop)
 {
   using IndexType = std::common_type_t<decltype(start), decltype(end)>;
@@ -84,7 +84,7 @@ void loop(std::integral auto start, std::integral auto end, auto&& fn,
  */
 template<int SimdSize, auto ... Args, std::random_access_iterator IteratorType,
   typename ResidualLoopPolicyType = ScalarResidualLoopT>
-void loop(IteratorType start, const IteratorType& end, auto&& fn,
+inline void loop(IteratorType start, const IteratorType& end, auto&& fn,
   ResidualLoopPolicyType residualLoopPolicy = ScalarResidualLoop)
 {
   index_array<SimdSize, IteratorType> simd_i{start};
@@ -135,7 +135,7 @@ void loop(IteratorType start, const IteratorType& end, auto&& fn,
  */
 template<int SimdSize, auto ... Args, std::random_access_iterator IteratorType,
   typename ResidualLoopPolicyType = ScalarResidualLoopT>
-void loop_with_linear_index(IteratorType start, const IteratorType& end, auto&& fn,
+inline void loop_with_linear_index(IteratorType start, const IteratorType& end, auto&& fn,
   ResidualLoopPolicyType residualLoopPolicy = ScalarResidualLoop)
 {
   index_array<SimdSize, IteratorType> simd_i{start};

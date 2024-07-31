@@ -38,13 +38,19 @@ TEST(Macro, UnvectorizedArrayAccess)
   TestData t;
   namespace sa = simd_access;
 
-  for (int i = 0; i < 10; ++i)
+  for (int i = 0; i < TestData::size; ++i)
   {
     EXPECT_EQ(SIMD_ACCESS(t.a, i), i);
     EXPECT_EQ(SIMD_ACCESS(t.a_subarr, i, [0]), i);
     EXPECT_EQ(SIMD_ACCESS(t.s, i, .x), i);
     EXPECT_EQ(SIMD_ACCESS(t.s, i, .y[0]), i);
     EXPECT_EQ(SIMD_ACCESS(t.v, i), i);
+
+    EXPECT_EQ(SIMD_ACCESS_V(t.a, i), i);
+    EXPECT_EQ(SIMD_ACCESS_V(t.a_subarr, i, [0]), i);
+    EXPECT_EQ(SIMD_ACCESS_V(t.s, i, .x), i);
+    EXPECT_EQ(SIMD_ACCESS_V(t.s, i, .y[0]), i);
+    EXPECT_EQ(SIMD_ACCESS_V(t.v, i), i);
 
     EXPECT_EQ(sa::sa(t.a, i), i);
     EXPECT_EQ(sa::sa(t.a_subarr, i)[0], i);
@@ -153,4 +159,26 @@ TEST(Macro, SimdVectorizedArrayAccess)
     EXPECT_EQ(x_sa_arr[i], vec_size - i + 3);
     EXPECT_EQ(x_sa_v[i], vec_size - i + 3);
   }
+}
+
+
+TEST(Macro, DeducedSimdVectorizedArrayAccess)
+{
+  TestData t;
+  constexpr size_t vec_size = stdx::native_simd<double>::size();
+  simd_access::index<vec_size> index{5};
+
+  auto deducedFunction = [](auto&& value)
+  {
+    for (int i = 0; i < vec_size; ++i)
+    {
+      EXPECT_EQ(value[i], i + 5);
+    }
+  };
+
+  deducedFunction(SIMD_ACCESS_V(t.a, index));
+  deducedFunction(SIMD_ACCESS_V(t.a_subarr, index, [0]));
+  deducedFunction(SIMD_ACCESS_V(t.s, index, .x));
+  deducedFunction(SIMD_ACCESS_V(t.s, index, .y[0]));
+  deducedFunction(SIMD_ACCESS_V(t.v, index));
 }

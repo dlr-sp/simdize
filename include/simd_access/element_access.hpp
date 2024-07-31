@@ -19,7 +19,7 @@ namespace simd_access
  * @param fn Function called for each scalar value of `x`. If the function intends to write to the element, then it
  *   must forward its argument as in `[&](auto&& y) { element_write(y) = ...; }`.
  */
-void elementwise(is_simd auto&& x, auto&& fn)
+inline void elementwise(is_simd auto&& x, auto&& fn)
 {
   for (int i = 0; i < x.size(); ++i)
   {
@@ -33,7 +33,7 @@ void elementwise(is_simd auto&& x, auto&& fn)
  * @param x Scalar value.
  * @param fn Function called for `x`.
  */
-void elementwise(auto&& x, auto&& fn)
+inline void elementwise(auto&& x, auto&& fn)
 {
   fn(x);
 }
@@ -44,7 +44,7 @@ void elementwise(auto&& x, auto&& fn)
  * @param x Element value.
  * @return Reference to `x`.
  */
-auto& element_write(std::copyable auto& x)
+inline auto& element_write(std::copyable auto& x)
 {
   return x;
 }
@@ -57,7 +57,7 @@ auto& element_write(std::copyable auto& x)
  *   `simd::reference::operator=(auto&&) &&` is available.
  */
 template<class T>
-std::remove_reference_t<T>&& element_write(T&& x)
+inline std::remove_reference_t<T>&& element_write(T&& x)
 {
   return static_cast<typename std::remove_reference<T>::type&&>(x) ;
 }
@@ -70,7 +70,7 @@ std::remove_reference_t<T>&& element_write(T&& x)
  * @return Constant reference to `x`.
  */
 template<int I>
-const auto& get_element(const auto& x)
+inline const auto& get_element(const auto& x)
 {
   static_assert(I == 0);
   return x;
@@ -83,7 +83,7 @@ const auto& get_element(const auto& x)
  * @return Value of `x[I]`.
  */
 template<int I>
-decltype(auto) get_element(const is_simd auto& x)
+inline decltype(auto) get_element(const is_simd auto& x)
 {
   static_assert(I < x.size());
   return x[I];
