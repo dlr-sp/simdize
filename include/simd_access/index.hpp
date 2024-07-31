@@ -59,7 +59,7 @@ struct index
    */
   auto to_simd() const
   {
-    return stdx::fixed_size_simd<IndexType, SimdSize>([this](auto i){ return index_ + i;});
+    return stdx::fixed_size_simd<IndexType, SimdSize>([this](auto i){ return IndexType(index_ + i); });
   }
 };
 
