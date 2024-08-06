@@ -14,6 +14,7 @@
 #include "simd_access/element_access.hpp"
 #include "simd_access/index.hpp"
 #include "simd_access/load_store.hpp"
+#include "simd_access/reflection.hpp"
 #include "simd_access/value_access.hpp"
 
 namespace simd_access

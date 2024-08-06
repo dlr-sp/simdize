@@ -67,7 +67,7 @@ inline void store(const indexed_location<T, SimdSize, ArrayType>& location,
  * @tparam ElementSize Size in bytes of the type of the simd-indexed element.
  * @tparam T Type of a simd element.
  * @tparam SimdSize Vector size of the simd type.
- * @param location Address of the memory location, at which the first simd element is stored.
+ * @param location Address of the memory location, at which the first scalar element is stored.
  * @return A simd value.
  */
 template<size_t ElementSize, simd_arithmetic T, int SimdSize>

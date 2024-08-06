@@ -18,20 +18,18 @@ Point<T> operator+(const Point<T>& p1, const Point<T>& p2)
   return Point<T>{p1.x + p2.x, p1.y + p2.y};
 }
 
-template<size_t ElementSize, template<class, int, class...> class Location, class T, int SimdSize, class... Args>
-auto load(const Location<Point<T>, SimdSize, Args...>& location)
+template<int SimdSize, class T>
+inline auto simdized_value(const Point<T>& p)
 {
-  return Point<stdx::fixed_size_simd<T, SimdSize>>
-    {load<ElementSize>(location.template member_access<&Point<T>::x>()),
-     load<ElementSize>(location.template member_access<&Point<T>::y>())};
+  using simd_access::simdized_value;
+  return Point<decltype(simdized_value<SimdSize>(p.x))>();
 }
 
-template<size_t ElementSize, template<class, int, class...> class Location, class T, int SimdSize, class... Args>
-void store(const Location<Point<T>, SimdSize, Args...>& location,
-  const Point<stdx::fixed_size_simd<T, SimdSize>>& source)
+template<class DestType, class SrcType, class FN>
+inline void simd_members(Point<DestType>& d, const Point<SrcType>& s, FN&& func)
 {
-  store<ElementSize>(location.template member_access<&Point<T>::x>(), source.x);
-  store<ElementSize>(location.template member_access<&Point<T>::y>(), source.y);
+  func(d.x, s.x);
+  func(d.y, s.y);
 }
 
 }

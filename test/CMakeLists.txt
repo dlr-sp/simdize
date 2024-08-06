@@ -8,6 +8,7 @@ add_executable(
   macro_test.cpp
   potential_operator_overload.cpp
   aos_test.cpp
+  reflections_test.cpp
 )
 target_link_libraries(
   simd_access_test
