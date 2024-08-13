@@ -10,6 +10,7 @@
 
 #include "simd_access/base.hpp"
 #include "simd_access/location.hpp"
+#include "simd_access/index.hpp"
 
 namespace simd_access
 {
@@ -107,6 +108,34 @@ inline auto load(const indexed_location<T, SimdSize, ArrayType>& location)
       return *reinterpret_cast<const T*>
         (reinterpret_cast<const char*>(location.base_) + ElementSize * location.indices_[i]);
     });
+}
+
+/**
+ * Creates a simd value from rvalues returned by the operator[] applied to `base`.
+ * @tparam BaseType Type of an simd element.
+ * @param base Base object.
+ * @param idx Index.
+ * @return A simd value.
+ */
+template<simd_arithmetic BaseType>
+inline auto load_rvalue(auto&& base, const auto& idx)
+{
+  return stdx::fixed_size_simd<BaseType, idx.size()>([&](auto i) { return base[get_index(idx, i)]; });
+}
+
+/**
+ * Creates a simd value from rvalues returned by the functor `subobject` applied to the range of elements defined by
+ * the simd index `idx`.
+ * @tparam BaseType Type of an simd element.
+ * @param base Base object.
+ * @param idx Index.
+ * @param subobject Functor returning the sub-object.
+ * @return A simd value.
+ */
+template<simd_arithmetic BaseType>
+inline auto load_rvalue(auto&& base, const auto& idx, auto&& subobject)
+{
+  return stdx::fixed_size_simd<BaseType, idx.size()>([&](auto i) { return subobject(base[get_index(idx, i)]); });
 }
 
 } //namespace simd_access

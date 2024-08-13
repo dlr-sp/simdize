@@ -14,8 +14,12 @@
 #ifndef SIMD_REFLECTION
 #define SIMD_REFLECTION
 
+#include <utility>
+#include <vector>
+
 #include "simd_access/base.hpp"
 #include "simd_access/location.hpp"
+#include "simd_access/index.hpp"
 
 namespace simd_access
 {
@@ -25,13 +29,59 @@ template<class MASK, class T>
 struct where_expression;
 
 template<class FN, is_stdx_simd DestType, is_stdx_simd SrcType>
-void simd_members(DestType& d, const SrcType& s, FN&& func);
+inline void simd_members(DestType& d, const SrcType& s, FN&& func)
+{
+  func(d, s);
+}
+
+template<class FN, is_stdx_simd DestType>
+inline void simd_members(DestType& d, const typename DestType::value_type& s, FN&& func)
+{
+  func(d, s);
+}
+
+template<class FN, is_stdx_simd SrcType>
+inline void simd_members(typename SrcType::value_type& d, const SrcType& s, FN&& func)
+{
+  func(d, s);
+}
 
 template<int SimdSize, simd_arithmetic T>
 inline auto simdized_value(T)
 {
   return stdx::fixed_size_simd<T, SimdSize>();
 }
+
+// overloads for std types, which can't be added after the template definition, since ADL wouldn't found it
+template<int SimdSize, class T>
+inline auto simdized_value(const std::vector<T>& v)
+{
+  std::vector<decltype(simdized_value<SimdSize>(std::declval<T>()))> result(v.size());
+  return result;
+}
+
+template<class DestType, class SrcType, class FN>
+inline void simd_members(std::vector<DestType>& d, const std::vector<SrcType>& s, FN&& func)
+{
+  for (auto e = d.size(), i = 0; i < e; ++i)
+  {
+    simd_members(d[i], s[i], func);
+  }
+}
+
+template<int SimdSize, class T, class U>
+inline auto simdized_value(const std::pair<T, U>& v)
+{
+  return std::make_pair(simdized_value<SimdSize>(v.first), simdized_value<SimdSize>(v.second));
+}
+
+template<class DestType1, class DestType2, class SrcType1, class SrcType2, class FN>
+inline void simd_members(std::pair<DestType1, DestType2>& d, const std::pair<SrcType1, SrcType2>& s, FN&& func)
+{
+  simd_members(d.first, s.first, func);
+  simd_members(d.second, s.second, func);
+}
+
 
 /**
  * Loads a structure-of-simd value from a memory location defined by a base address and an linear index. The simd
@@ -52,6 +102,54 @@ inline auto load(const linear_location<T, SimdSize>& location)
     {
       dest = load<ElementSize>(linear_location<std::remove_reference_t<decltype(src)>, SimdSize>(&src));
     });
+  return result;
+}
+
+/**
+ * Creates a simd value from rvalues returned by the functor `subobject` applied to the range of elements defined by
+ * the simd index `idx`.
+ * @tparam BaseType Type of the scalar structure, of which `SimdSize` number of objects will be combined in a
+ *   structure-of-simd.
+ * @param base Base object.
+ * @param idx Linear index.
+ * @param subobject Functor returning the sub-object.
+ * @return A simd value.
+ */
+template<class BaseType>
+  requires (!simd_arithmetic<BaseType>)
+inline auto load_rvalue(auto&& base, const auto& idx, auto&& subobject)
+{
+  decltype(simdized_value<idx.size()>(std::declval<BaseType>())) result;
+  for (int i = 0; i < idx.size(); ++i)
+  {
+    simd_members(result, subobject(base[get_index(idx, i)]), [&](auto&& dest, auto&& src)
+      {
+        dest[i] = src;
+      });
+  }
+  return result;
+}
+
+/**
+ * Creates a simd value from rvalues returned by the operator[] applied to `base`.
+ * @tparam BaseType Type of the scalar structure, of which `SimdSize` number of objects will be combined in a
+ *   structure-of-simd.
+ * @param base Base object.
+ * @param idx Linear index.
+ * @return A simd value.
+ */
+template<class BaseType>
+  requires (!simd_arithmetic<BaseType>)
+inline auto load_rvalue(auto&& base, const auto& idx)
+{
+  decltype(simdized_value<idx.size()>(std::declval<BaseType>())) result;
+  for (int i = 0; i < idx.size(); ++i)
+  {
+    simd_members(result, base[get_index(idx, i)], [&](auto&& dest, auto&& src)
+      {
+        dest[i] = src;
+      });
+  }
   return result;
 }
 

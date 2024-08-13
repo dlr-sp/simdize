@@ -1,12 +1,12 @@
 
 #include <gtest/gtest.h>
+#include <utility>
 #include <vector>
 #include <algorithm>
 #include <numeric>
 #include <random>
 
 #include "simd_access/simd_access.hpp"
-#include "simd_access/simd_loop.hpp"
 
 namespace {
 
@@ -15,6 +15,11 @@ struct TestStruct
 {
   T x;
   T y[2];
+
+  std::pair<T, T> GetPair() const
+  {
+    return std::pair(x, y[1]);
+  }
 };
 
 struct TestData
@@ -44,29 +49,14 @@ inline auto simdized_value(const TestStruct<T>& t)
 template<class DestType, class SrcType, class FN>
 inline void simd_members(TestStruct<DestType>& d, const TestStruct<SrcType>& s, FN&& func)
 {
-  func(d.x, s.x);
-  func(d.y[0], s.y[0]);
-  func(d.y[1], s.y[1]);
-}
-
-template<int SimdSize, class T>
-inline auto simdized_value(const std::vector<T>& v)
-{
-  using simd_access::simdized_value;
-  std::vector<decltype(simdized_value<SimdSize>(std::declval<T>()))> result(v.size());
-  return result;
-}
-
-template<class DestType, class SrcType, class FN>
-inline void simd_members(std::vector<DestType>& d, const std::vector<SrcType>& s, FN&& func)
-{
-  for (auto e = d.size(), i = 0; i < e; ++i)
-  {
-    func(d[i], s[i]);
-  }
+  using simd_access::simd_members;
+  simd_members(d.x, s.x, func);
+  simd_members(d.y[0], s.y[0], func);
+  simd_members(d.y[1], s.y[1], func);
 }
 
 }
+
 
 TEST(Reflections, IndexedAccess)
 {
@@ -86,3 +76,46 @@ TEST(Reflections, IndexedAccess)
     }, simd_access::VectorResidualLoop);
 }
 
+TEST(Reflections, RValueAccess)
+{
+  TestData src;
+  constexpr size_t vec_size = stdx::native_simd<double>::size();
+
+  {
+    simd_access::index<vec_size> index{3};
+    auto ts = SIMD_ACCESS(src.v, index, .GetPair());
+    for (int j = 0; j < vec_size; ++j)
+    {
+      EXPECT_EQ(ts.first[j], j + 3);
+      EXPECT_EQ(ts.second[j], j + 2003);
+    }
+  }
+
+  {
+    stdx::fixed_size_simd<size_t, vec_size> index;
+    for (int i = 0; i < vec_size; ++i)
+    {
+      index[i] = vec_size - i + 3;
+    }
+    auto ts = SIMD_ACCESS(src.v, index, .GetPair());
+    for (int i = 0; i < vec_size; ++i)
+    {
+      EXPECT_EQ(ts.first[i], vec_size - i + 3);
+      EXPECT_EQ(ts.second[i], vec_size - i + 2003);
+    }
+  }
+
+  {
+    simd_access::index_array<vec_size> index;
+    for (int i = 0; i < vec_size; ++i)
+    {
+      index.index_[i] = vec_size - i + 3;
+    }
+    auto ts = SIMD_ACCESS(src.v, index, .GetPair());
+    for (int i = 0; i < vec_size; ++i)
+    {
+      EXPECT_EQ(ts.first[i], vec_size - i + 3);
+      EXPECT_EQ(ts.second[i], vec_size - i + 2003);
+    }
+  }
+}

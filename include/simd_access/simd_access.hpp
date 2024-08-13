@@ -14,66 +14,138 @@
 #include "simd_access/element_access.hpp"
 #include "simd_access/index.hpp"
 #include "simd_access/load_store.hpp"
+#include "simd_access/simd_loop.hpp"
 #include "simd_access/reflection.hpp"
 #include "simd_access/value_access.hpp"
 
 namespace simd_access
 {
 
-inline auto get_base_address(auto&& base_addr, std::integral auto i)
-{
-  return &base_addr[i];
-}
+template<bool isLvalue>
+struct LValueSeparator;
 
-template<int SimdSize, class IndexType>
-inline auto get_base_address(auto&& base_addr, const index<SimdSize, IndexType>& i)
+template<>
+struct LValueSeparator<true>
 {
-  return &base_addr[i.index_];
-}
+  template<class T>
+  static decltype(auto) to_simd(T&& base, std::integral auto i)
+  {
+    return base[i];
+  }
 
-template<int SimdSize, class ArrayType>
-inline auto get_base_address(auto&& base_addr, const index_array<SimdSize, ArrayType>&)
-{
-  return &base_addr[0];
-}
+  template<class T, class Func>
+  static decltype(auto) to_simd(T&& base, std::integral auto i, Func&& subobject)
+  {
+    return subobject(base[i]);
+  }
 
-inline auto get_base_address(auto& base_addr, const is_stdx_simd auto& i)
-{
-  return &base_addr[0];
-}
+  template<int SimdSize, class IndexType>
+  static auto get_base_address(auto&& base_addr, const index<SimdSize, IndexType>& i)
+  {
+    return &base_addr[i.index_];
+  }
 
-template<size_t ElementSize, class T, int SimdSize, class IndexType>
-inline auto get_direct_value_access(T* base, const index<SimdSize, IndexType>&)
-{
-  return make_value_access<ElementSize>(linear_location<T, SimdSize>{base});
-}
+  template<class IndexType, class Abi>
+  static auto get_base_address(auto&& base_addr, const stdx::simd<IndexType, Abi>&)
+  {
+    return &base_addr[0];
+  }
 
-template<size_t ElementSize, class T, int SimdSize, class ArrayType>
-inline auto get_direct_value_access(T* base, const index_array<SimdSize, ArrayType>& indices)
-{
-  return make_value_access<ElementSize>(indexed_location<T, SimdSize, ArrayType>{base, indices.index_});
-}
+  template<int SimdSize, class ArrayType>
+  static auto get_base_address(auto&& base_addr, const index_array<SimdSize, ArrayType>&)
+  {
+    return &base_addr[0];
+  }
 
-template<size_t ElementSize>
-inline auto& get_direct_value_access(auto* base, std::integral auto)
-{
-  return *base;
-}
+  template<int SimdSize, class IndexType>
+  static auto get_base_address(auto&& base_addr, const index<SimdSize, IndexType>& i, auto&& subobject)
+  {
+    return &subobject(base_addr[i.index_]);
+  }
 
-template<size_t ElementSize, class T, class IndexType, class Abi>
-inline auto get_direct_value_access(T* base, const stdx::simd<IndexType, Abi>& i)
+  template<class IndexType, class Abi>
+  static auto get_base_address(auto&& base_addr, const stdx::simd<IndexType, Abi>&, auto&& subobject)
+  {
+    return &subobject(base_addr[0]);
+  }
+
+  template<int SimdSize, class ArrayType>
+  static auto get_base_address(auto&& base_addr, const index_array<SimdSize, ArrayType>&, auto&& subobject)
+  {
+    return &subobject(base_addr[0]);
+  }
+
+
+  template<size_t ElementSize, class T, int SimdSize, class IndexType>
+  static auto get_direct_value_access(T* base, const index<SimdSize, IndexType>&)
+  {
+    return make_value_access<ElementSize>(linear_location<T, SimdSize>{base});
+  }
+
+  template<size_t ElementSize, class T, int SimdSize, class ArrayType>
+  static auto get_direct_value_access(T* base, const index_array<SimdSize, ArrayType>& idx)
+  {
+    return make_value_access<ElementSize>(indexed_location<T, SimdSize, ArrayType>{base, idx.index_});
+  }
+
+  template<size_t ElementSize, class T, class IndexType, class Abi>
+  static auto get_direct_value_access(T* base, const stdx::simd<IndexType, Abi>& idx)
+  {
+    return make_value_access<ElementSize>(indexed_location<T, idx.size(), stdx::simd<IndexType, Abi>>{base, idx});
+  }
+
+  template<class IndexType, class... Func>
+    requires(!std::integral<IndexType>)
+  static auto to_simd(auto&& base, const IndexType& indices, Func&&... subobject)
+  {
+    return get_direct_value_access<sizeof(decltype(base[0]))>(get_base_address(base, indices, subobject...), indices);
+  }
+};
+
+
+template<>
+struct LValueSeparator<false>
 {
-  return make_value_access<ElementSize>(indexed_location<T, i.size(), stdx::simd<IndexType, Abi>>{base, i});
-}
+  static decltype(auto) to_simd(auto&& base, std::integral auto i)
+  {
+    return base[i];
+  }
+
+  static decltype(auto) to_simd(auto&& base, std::integral auto i, auto&& subobject)
+  {
+    return subobject(base[i]);
+  }
+
+  template<class T>
+  using BaseType = std::decay_t<decltype(std::declval<T>()[0])>;
+
+  template<class T, class Func>
+  using BaseTypeFn = std::decay_t<decltype(std::declval<Func>()(std::declval<T>()[0]))>;
+
+  template<class T, class IndexType>
+    requires(!std::integral<IndexType>)
+  static auto to_simd(T&& base, const IndexType& idx)
+  {
+    return load_rvalue<BaseType<T>>(base, idx);
+  }
+
+  template<class T, class IndexType, class Func>
+    requires(!std::integral<IndexType>)
+  static auto to_simd(T&& base, const IndexType& idx, Func&& subelement)
+  {
+    return load_rvalue<BaseTypeFn<T, Func>>(base, idx, subelement);
+  }
+};
+
 
 /**
  * This function mocks a globally overloaded operator[]. It can be used instead of the SIMD_ACCESS macro,
- * if no named member is accessed.
+ * if no named subobject is accessed.
  */
 template<class T, class IndexType>
-inline auto sa(T&& base, const IndexType& index)
+inline decltype(auto) sa(T&& base, const IndexType& index)
 {
-  return get_direct_value_access<sizeof(decltype(base[0]))>(get_base_address(base, index), index);
+  return LValueSeparator<std::is_lvalue_reference_v<decltype(base[0])>>::to_simd(base, index);
 }
 
 template<has_to_simd T>
@@ -92,7 +164,7 @@ inline auto to_simd(T&& value)
 
 
 /**
- * This macro defines a simd access to a variable of the form `base[index] member` (member is optional).
+ * This macro defines a simd access to a variable of the form `base[index] subobject` (subobject is optional).
  * TODO: If global operator[] overloading becomes possible, then a decomposition of `base[index]` isn't required
  * anymore. Direct accesses (`base[index]`) and accesses to sub-arrays (`base[index][subindex]`) can be directly
  * written then.
@@ -100,9 +172,8 @@ inline auto to_simd(T&& value)
  * be directly written.
  */
 #define SIMD_ACCESS(base, index, ...) \
-  simd_access::get_direct_value_access<sizeof(decltype(base[0]))>( \
-    &((*simd_access::get_base_address(base, index)) __VA_ARGS__), index)
-
+  simd_access::LValueSeparator<std::is_lvalue_reference_v<decltype((base[0] __VA_ARGS__))>>:: \
+    to_simd(base, index __VA_OPT__(, [&](auto&& e) -> decltype((e __VA_ARGS__)) { return e __VA_ARGS__; }))
 
 #define SIMD_ACCESS_V(...) simd_access::to_simd(SIMD_ACCESS(__VA_ARGS__))
 

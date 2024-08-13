@@ -85,7 +85,7 @@ struct index_array
    * @param i Index in the vector must be in the range [0, SimdSize) .
    * @return The scalar index at vector lane i, i.e. index_[i].
    */
-  auto scalar_index(int i) { return index_[i]; }
+  auto scalar_index(int i) const { return index_[i]; }
 
   /// The index array, the n'th entry defines the index of the n'th element in the simd type.
   ArrayType index_;
@@ -110,6 +110,24 @@ concept is_index =
   requires(PotentialIndexType x) { []<int SimdSize, class ArrayType>(index_array<SimdSize, ArrayType>&){}(x); };
 
 /// TODO: Introduce masked_index and masked_index_array to support e.g. residual masked loops.
+
+template<int SimdSize, class IndexType>
+inline auto get_index(const index<SimdSize, IndexType>& idx, auto i)
+{
+  return idx.index_ + i;
+}
+
+template<int SimdSize, class ArrayType>
+inline auto get_index(const index_array<SimdSize, ArrayType>& idx, auto i)
+{
+  return idx.scalar_index(i);
+}
+
+template<class IndexType, class Abi>
+inline auto get_index(const stdx::simd<IndexType, Abi>& idx, auto i)
+{
+  return idx[i];
+}
 
 } //namespace simd_access
 
