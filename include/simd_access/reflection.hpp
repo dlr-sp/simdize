@@ -63,7 +63,7 @@ inline auto simdized_value(const std::vector<T>& v)
 template<class DestType, class SrcType, class FN>
 inline void simd_members(std::vector<DestType>& d, const std::vector<SrcType>& s, FN&& func)
 {
-  for (auto e = d.size(), i = 0; i < e; ++i)
+  for (decltype(d.size()) i = 0, e = d.size(); i < e; ++i)
   {
     simd_members(d[i], s[i], func);
   }
@@ -120,7 +120,7 @@ template<class BaseType>
 inline auto load_rvalue(auto&& base, const auto& idx, auto&& subobject)
 {
   decltype(simdized_value<idx.size()>(std::declval<BaseType>())) result;
-  for (int i = 0; i < idx.size(); ++i)
+  for (decltype(idx.size()) i = 0, e = idx.size(); i < e; ++i)
   {
     simd_members(result, subobject(base[get_index(idx, i)]), [&](auto&& dest, auto&& src)
       {
@@ -143,7 +143,7 @@ template<class BaseType>
 inline auto load_rvalue(auto&& base, const auto& idx)
 {
   decltype(simdized_value<idx.size()>(std::declval<BaseType>())) result;
-  for (int i = 0; i < idx.size(); ++i)
+  for (decltype(idx.size()) i = 0, e = idx.size(); i < e; ++i)
   {
     simd_members(result, base[get_index(idx, i)], [&](auto&& dest, auto&& src)
       {

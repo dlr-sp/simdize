@@ -34,7 +34,7 @@ inline void store(const linear_location<T, SimdSize>& location, const stdx::fixe
   else
   {
     // scatter with constant pitch
-    for (size_t i = 0; i < SimdSize; ++i)
+    for (int i = 0; i < SimdSize; ++i)
     {
       *reinterpret_cast<T*>(reinterpret_cast<char*>(location.base_) + ElementSize * i) = source[i];
     }
@@ -56,7 +56,7 @@ inline void store(const indexed_location<T, SimdSize, ArrayType>& location,
   const stdx::fixed_size_simd<T, SimdSize>& source)
 {
   // scatter with indirect indices
-  for (size_t i = 0; i < SimdSize; ++i)
+  for (int i = 0; i < SimdSize; ++i)
   {
     *reinterpret_cast<T*>(reinterpret_cast<char*>(location.base_) + ElementSize * location.indices_[i]) = source[i];
   }

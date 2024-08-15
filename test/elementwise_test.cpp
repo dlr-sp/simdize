@@ -2,6 +2,7 @@
 #include <gtest/gtest.h>
 
 #include "simd_access/element_access.hpp"
+#include "simd_access/universal_simd.hpp"
 
 
 TEST(Elementwise, SimpleRead)

@@ -9,6 +9,7 @@ add_executable(
   potential_operator_overload.cpp
   aos_test.cpp
   reflections_test.cpp
+  universal_simd_test.cpp
 )
 target_link_libraries(
   simd_access_test

@@ -10,16 +10,14 @@
 
 #include <array>
 #include <experimental/simd>
+#include <type_traits>
 namespace stdx = std::experimental;
 
 namespace simd_access
 {
 
 template<class T, int SimdSize>
-struct universal_simd : std::array<T, SimdSize>
-{
-  static constexpr auto size() { return SimdSize; }
-};
+struct universal_simd;
 
 template<typename T>
 concept simd_arithmetic =

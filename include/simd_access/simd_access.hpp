@@ -16,6 +16,7 @@
 #include "simd_access/load_store.hpp"
 #include "simd_access/simd_loop.hpp"
 #include "simd_access/reflection.hpp"
+#include "simd_access/universal_simd.hpp"
 #include "simd_access/value_access.hpp"
 
 namespace simd_access
@@ -27,14 +28,12 @@ struct LValueSeparator;
 template<>
 struct LValueSeparator<true>
 {
-  template<class T>
-  static decltype(auto) to_simd(T&& base, std::integral auto i)
+  static decltype(auto) to_simd(auto&& base, std::integral auto i)
   {
     return base[i];
   }
 
-  template<class T, class Func>
-  static decltype(auto) to_simd(T&& base, std::integral auto i, Func&& subobject)
+  static decltype(auto) to_simd(auto&& base, std::integral auto i, auto&& subobject)
   {
     return subobject(base[i]);
   }
