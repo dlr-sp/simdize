@@ -134,3 +134,28 @@ TEST(UniversalSimdTest, IndexAccess)
     }
   }
 }
+
+TEST(UniversalSimdTest, Reference)
+{
+  RestrictiveClass<double> rArray[4] =
+  {
+    RestrictiveClass(Point{ 1., 2.}), RestrictiveClass(Point{ 3., 4.}),
+    RestrictiveClass(Point{ 5., 6.}), RestrictiveClass(Point{ 7., 8.})
+  };
+
+  constexpr size_t vec_size = 2;
+  {
+    simd_access::index<vec_size> index{1};
+    auto result = simd_access::generate_universal(index, [&](auto i) { return std::cref(rArray[i].GetPoint()); });
+    auto xResult = SIMD_UNIVERSAL_ACCESS(result, .x_);
+
+    for (int i = 0; i < vec_size; ++i)
+    {
+      EXPECT_EQ(result[i].get().x_, i * 2. + 3.);
+      EXPECT_EQ(xResult[i], i * 2. + 3.);
+      EXPECT_EQ(result[i].get().y_, i * 2. + 4.);
+
+      EXPECT_EQ(&result[i].get(), &rArray[i + 1].GetPoint());
+    }
+  }
+}

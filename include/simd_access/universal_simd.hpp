@@ -11,6 +11,8 @@
 #include "simd_access/base.hpp"
 #include "simd_access/index.hpp"
 #include "simd_access/reflection.hpp"
+#include <functional>
+#include <type_traits>
 
 namespace simd_access
 {
@@ -49,13 +51,24 @@ inline decltype(auto) universal_access(const T& v, Func&& subobject)
   return subobject(v);
 }
 
+inline decltype(auto) unwrap_reference_wrapper(auto&& r)
+{
+  return r;
+}
+
+template<class T>
+inline decltype(auto) unwrap_reference_wrapper(const std::reference_wrapper<T>& r)
+{
+  return r.get();
+}
+
 template<class T, int SimdSize, class Func>
 inline auto universal_access(const simd_access::universal_simd<T, SimdSize>& v, Func&& subobject)
 {
-  decltype(simdized_value<SimdSize>(std::declval<decltype(subobject(v[0]))>())) result;
+  decltype(simdized_value<SimdSize>(std::declval<decltype(subobject(unwrap_reference_wrapper(v[0])))>())) result;
   for (int i = 0; i < SimdSize; ++i)
   {
-    simd_members(result, subobject(v[i]), [&](auto&& d, auto&& s) { d[i] = s; });
+    simd_members(result, subobject(unwrap_reference_wrapper(v[i])), [&](auto&& d, auto&& s) { d[i] = s; });
   }
   return result;
 }
