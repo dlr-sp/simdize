@@ -64,6 +64,37 @@ TEST(Macro, UnvectorizedArrayAccess)
     EXPECT_EQ(sa::sa(t.a_subarr, i)[0], i);
     EXPECT_EQ(sa::sa(t.v, i), i);
   }
+
+  for (int i = 0; i < TestData::size; ++i)
+  {
+    SIMD_ACCESS(t.a, i) = i + 300.;
+    SIMD_ACCESS(t.a_subarr, i, [0]) =  i + 301.;
+    SIMD_ACCESS(t.s, i, .x) = i + 302.;
+    SIMD_ACCESS(t.s, i, .y[0]) = i + 303.;
+    SIMD_ACCESS(t.v, i) = i + 304.;
+  }
+  for (int i = 0; i < TestData::size; ++i)
+  {
+    EXPECT_EQ(SIMD_ACCESS(t.a, i), i + 300.);
+    EXPECT_EQ(SIMD_ACCESS(t.a_subarr, i, [0]), i + 301.);
+    EXPECT_EQ(SIMD_ACCESS(t.s, i, .x), i + 302.);
+    EXPECT_EQ(SIMD_ACCESS(t.s, i, .y[0]), i + 303.);
+    EXPECT_EQ(SIMD_ACCESS(t.v, i), i + 304.);
+  }
+
+  for (int i = 0; i < TestData::size; ++i)
+  {
+    sa::sa(t.a, i) =  i + 305.;
+    sa::sa(t.a_subarr, i)[0] = i + 306.;
+    sa::sa(t.v, i) = i + 307.;
+  }
+
+  for (int i = 0; i < TestData::size; ++i)
+  {
+    EXPECT_EQ(sa::sa(t.a, i), i + 305.);
+    EXPECT_EQ(sa::sa(t.a_subarr, i)[0], i + 306.);
+    EXPECT_EQ(sa::sa(t.v, i), i + 307.);
+  }
 }
 
 TEST(Macro, DirectVectorizedArrayAccess)

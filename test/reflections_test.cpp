@@ -20,6 +20,11 @@ struct TestStruct
   {
     return std::pair(x, y[1]);
   }
+
+  TestStruct operator+(const TestStruct& op2) const
+  {
+    return TestStruct{ x + op2.x, { y[0] + op2.y[0], y[1] + op2.y[1] } };
+  }
 };
 
 struct TestData
@@ -117,5 +122,21 @@ TEST(Reflections, RValueAccess)
       EXPECT_EQ(ts.first[i], vec_size - i + 3);
       EXPECT_EQ(ts.second[i], vec_size - i + 2003);
     }
+  }
+}
+
+TEST(Reflections, OperatorOverload)
+{
+  TestData dest, src1, src2;
+  constexpr size_t vec_size = stdx::native_simd<double>::size();
+  simd_access::loop<vec_size>(0, src1.v.size(), [&](auto i)
+  {
+    SIMD_ACCESS(dest.v, i) = SIMD_ACCESS(src1.v, i) + SIMD_ACCESS(src2.v, i);
+  });
+  for (int i = 0; i < dest.v.size(); ++i)
+  {
+    EXPECT_EQ(dest.v[i].x, i * 2);
+    EXPECT_EQ(dest.v[i].y[0], (i + 1000) * 2);
+    EXPECT_EQ(dest.v[i].y[1], (i + 2000) * 2);
   }
 }

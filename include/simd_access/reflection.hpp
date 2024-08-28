@@ -28,6 +28,12 @@ namespace simd_access
 template<class MASK, class T>
 struct where_expression;
 
+template<class FN, simd_arithmetic DestType, simd_arithmetic SrcType>
+inline void simd_members(DestType& d, const SrcType& s, FN&& func)
+{
+  func(d, s);
+}
+
 template<class FN, is_stdx_simd DestType, is_stdx_simd SrcType>
 inline void simd_members(DestType& d, const SrcType& s, FN&& func)
 {

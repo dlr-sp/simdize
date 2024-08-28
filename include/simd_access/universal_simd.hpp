@@ -75,7 +75,7 @@ inline auto universal_access(const simd_access::universal_simd<T, SimdSize>& v, 
 
 
 #define SIMD_UNIVERSAL_ACCESS(value, expr) \
-  simd_access::universal_access(value, [&](auto element) { return element expr; })
+  simd_access::universal_access(value, [&](auto&& element) { return element expr; })
 
 
 } //namespace simd_access
