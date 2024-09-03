@@ -10,6 +10,7 @@ add_executable(
   aos_test.cpp
   reflections_test.cpp
   universal_simd_test.cpp
+  vector_test.cpp
 )
 target_link_libraries(
   simd_access_test

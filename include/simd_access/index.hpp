@@ -10,6 +10,7 @@
 
 #include "simd_access/base.hpp"
 #include "simd_access/location.hpp"
+#include <type_traits>
 
 namespace simd_access
 {
@@ -106,6 +107,7 @@ struct index_array
 
 template<class PotentialIndexType>
 concept is_index =
+  (is_stdx_simd<PotentialIndexType> && std::is_integral_v<typename PotentialIndexType::value_type>) ||
   requires(PotentialIndexType x) { []<int SimdSize, class IndexType>(index<SimdSize, IndexType>&){}(x); } ||
   requires(PotentialIndexType x) { []<int SimdSize, class ArrayType>(index_array<SimdSize, ArrayType>&){}(x); };
 
