@@ -27,6 +27,11 @@ struct vector : std::vector<Args...>
     return LValueSeparator<true>::to_simd(*this, index);
   }
 
+  auto operator[](const is_index auto& index) const
+  {
+    return LValueSeparator<true>::to_simd(*this, index);
+  }
+
   using std::vector<Args...>::operator[];
 };
 
