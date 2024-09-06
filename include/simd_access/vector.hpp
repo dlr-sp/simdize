@@ -17,10 +17,10 @@
 namespace simd_access
 {
 
-template<typename... Args>
-struct vector : std::vector<Args...>
+template<typename Base>
+struct SimdIndexOperator : Base
 {
-  using std::vector<Args...>::vector;
+  using Base::Base;
 
   auto operator[](const is_index auto& index)
   {
@@ -32,8 +32,11 @@ struct vector : std::vector<Args...>
     return LValueSeparator<true>::to_simd(*this, index);
   }
 
-  using std::vector<Args...>::operator[];
+  using Base::operator[];
 };
+
+template<typename... Args>
+using vector = SimdIndexOperator<std::vector<Args...>>;
 
 } //namespace simd_access
 
