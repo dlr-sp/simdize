@@ -116,7 +116,7 @@ concept is_index =
 template<int SimdSize, class IndexType>
 inline auto get_index(const index<SimdSize, IndexType>& idx, auto i)
 {
-  return idx.index_ + i;
+  return idx.scalar_index(i);
 }
 
 template<int SimdSize, class ArrayType>

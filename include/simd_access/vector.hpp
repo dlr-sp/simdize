@@ -18,7 +18,7 @@ namespace simd_access
 {
 
 template<typename Base>
-struct SimdIndexOperator : Base
+struct index_operator : Base
 {
   using Base::Base;
 
@@ -36,7 +36,7 @@ struct SimdIndexOperator : Base
 };
 
 template<typename... Args>
-using vector = SimdIndexOperator<std::vector<Args...>>;
+using vector = index_operator<std::vector<Args...>>;
 
 } //namespace simd_access
 

@@ -19,10 +19,36 @@ TEST(Elementwise, SimpleRead)
       dest[linear_index++] = y;
     };
 
-  simd_access::elementwise(x, read_fn);
-  simd_access::elementwise(source[4], read_fn);
+  simd_access::elementwise(read_fn, x);
+  simd_access::elementwise(read_fn, source[4]);
 
   for (int i = 0; i < 5; ++i)
+  {
+    EXPECT_EQ(dest[i], i + 1);
+  }
+}
+
+TEST(Elementwise, MultipleRead)
+{
+  double x_source[5] = { 1, 3, 5, 7, 9 };
+  double y_source[5] = { 2, 4, 6, 8, 10 };
+  double dest[10] = { };
+  constexpr size_t vec_size = 4;
+  stdx::fixed_size_simd<double, vec_size> x(x_source, stdx::element_aligned);
+  stdx::fixed_size_simd<double, vec_size> y(y_source, stdx::element_aligned);
+
+  int linear_index = 0;
+
+  auto read_fn = [&](auto&& x_scalar, auto&& y_scalar)
+    {
+      dest[linear_index++] = x_scalar;
+      dest[linear_index++] = y_scalar;
+    };
+
+  simd_access::elementwise(read_fn, x, y);
+  simd_access::elementwise(read_fn, x_source[4], y_source[4]);
+
+  for (int i = 0; i < 10; ++i)
   {
     EXPECT_EQ(dest[i], i + 1);
   }
@@ -41,8 +67,8 @@ TEST(Elementwise, SimpleWrite)
       simd_access::element_write(y) = source[linear_index++];
     };
 
-  simd_access::elementwise(dest_v, write_fn);
-  simd_access::elementwise(dest_s, write_fn);
+  simd_access::elementwise(write_fn, dest_v);
+  simd_access::elementwise(write_fn, dest_s);
 
   for (int i = 0; i < 4; ++i)
   {

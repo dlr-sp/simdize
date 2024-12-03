@@ -15,27 +15,28 @@ namespace simd_access
 
 /**
  * Call a function for each scalar of a simd value.
+ * @param fn Function called for each scalar value of `x` and `y`. If the function intends to write to the element,
+ *   then it must forward its argument as in `[&](auto&& y) { element_write(y) = ...; }`.
  * @param x Simd value.
- * @param fn Function called for each scalar value of `x`. If the function intends to write to the element, then it
- *   must forward its argument as in `[&](auto&& y) { element_write(y) = ...; }`.
+ * @param y... More simd values.
  */
-inline void elementwise(is_simd auto&& x, auto&& fn)
+inline void elementwise(auto&& fn, is_simd auto&& x, is_simd auto&&... y)
 {
   for (int i = 0; i < x.size(); ++i)
   {
-    fn(x[i]);
+    fn(x[i], y[i]...);
   }
 }
 
 /**
  * Call a function for the scalar value `x`.
  * This overload can be used with a generic functor to uniformly access scalar values of simds and scalars.
- * @param x Scalar value.
  * @param fn Function called for `x`.
+ * @param x... Scalar values.
  */
-inline void elementwise(auto&& x, auto&& fn)
+inline void elementwise(auto&& fn, auto&&... x)
 {
-  fn(x);
+  fn(x...);
 }
 
 /**

@@ -67,10 +67,10 @@ TEST(Loop, IndirectCopy)
   simd_access::loop<vec_size>(indices.begin(), indices.end(), [&](auto i)
     {
       auto x = SIMD_ACCESS(src.a, i) * 1;
-      simd_access::elementwise(x, [&](auto&& v)
+      simd_access::elementwise([&](auto&& v)
       {
         dest.a[linear_index++] = v;
-      });
+      }, x);
     });
 
   for (int i = 0; i < src.size; ++i)
