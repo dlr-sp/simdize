@@ -140,3 +140,42 @@ TEST(Reflections, OperatorOverload)
     EXPECT_EQ(dest.v[i].y[1], (i + 2000) * 2);
   }
 }
+
+TEST(Reflections, StructuralReduction)
+{
+  TestData src;
+  TestStruct<double> dest[5] = {}, faultdest[5] = {};
+  constexpr size_t vec_size = stdx::native_simd<double>::size();
+  const int indices[11] = { 1, 1, 2, 3, 4, 0, 0, 4, 1, 2, 4 };
+  const int num_indices[5] = { 2, 3, 2, 1, 3 };
+
+  simd_access::loop<vec_size>(indices, indices + 11, [&](auto elemIdx)
+  {
+    auto result = SIMD_ACCESS_V(src.v, elemIdx);
+    simd_access::elementwise_with_index([&](auto elemIndexScalar, auto... i)
+    {
+      simd_members(dest[elemIndexScalar], result, [&](auto& d, const auto& s) { d += simd_access::element(s, i...); });
+    }, elemIdx);
+    SIMD_ACCESS(faultdest, elemIdx, .x) += result.x;
+  });
+
+  int faultdestCounter = 0;
+  for (int i = 0; i < 5; ++i)
+  {
+    EXPECT_EQ(dest[i].x, num_indices[i] * i);
+    EXPECT_EQ(dest[i].y[0], num_indices[i] * (i + 1000));
+    EXPECT_EQ(dest[i].y[1], num_indices[i] * (i + 2000));
+    if (faultdest[i].x != num_indices[i] * i)
+    {
+      ++faultdestCounter;
+    }
+  }
+  if (vec_size == 2)
+  {
+    EXPECT_EQ(faultdestCounter, 1);
+  }
+  else if (vec_size == 4 || vec_size == 8)
+  {
+    EXPECT_EQ(faultdestCounter, 2);
+  }
+}

@@ -106,10 +106,10 @@ struct index_array
 };
 
 template<class PotentialIndexType>
-concept is_index =
+concept is_simd_index =
   (is_stdx_simd<PotentialIndexType> && std::is_integral_v<typename PotentialIndexType::value_type>) ||
-  requires(PotentialIndexType x) { []<int SimdSize, class IndexType>(index<SimdSize, IndexType>&){}(x); } ||
-  requires(PotentialIndexType x) { []<int SimdSize, class ArrayType>(index_array<SimdSize, ArrayType>&){}(x); };
+  requires(std::remove_cvref_t<PotentialIndexType> x) { []<int SimdSize, class IndexType>(index<SimdSize, IndexType>&){}(x); } ||
+  requires(std::remove_cvref_t<PotentialIndexType> x) { []<int SimdSize, class ArrayType>(index_array<SimdSize, ArrayType>&){}(x); };
 
 /// TODO: Introduce masked_index and masked_index_array to support e.g. residual masked loops.
 

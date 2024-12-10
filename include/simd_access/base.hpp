@@ -25,12 +25,12 @@ concept simd_arithmetic =
 
 template<class PotentialSimdType>
 concept is_stdx_simd =
-  requires(PotentialSimdType x) { []<class T, class Abi>(stdx::simd<T, Abi>&){}(x); };
+  requires(std::remove_cvref_t<PotentialSimdType> x) { []<class T, class Abi>(stdx::simd<T, Abi>&){}(x); };
 
 template<class PotentialSimdType>
 concept is_simd =
   is_stdx_simd<PotentialSimdType> ||
-  requires(PotentialSimdType x) { []<class T, int SimdSize>(universal_simd<T, SimdSize>&){}(x); };
+  requires(std::remove_cvref_t<PotentialSimdType> x) { []<class T, int SimdSize>(universal_simd<T, SimdSize>&){}(x); };
 
 
 template<class T, int SimdSize>

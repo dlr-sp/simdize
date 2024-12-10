@@ -22,12 +22,12 @@ struct index_operator : Base
 {
   using Base::Base;
 
-  auto operator[](const is_index auto& index)
+  auto operator[](const is_simd_index auto& index)
   {
     return LValueSeparator<true>::to_simd(*this, index);
   }
 
-  auto operator[](const is_index auto& index) const
+  auto operator[](const is_simd_index auto& index) const
   {
     return LValueSeparator<true>::to_simd(*this, index);
   }

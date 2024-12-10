@@ -9,9 +9,29 @@
 #define SIMD_ACCESS_ELEMENT_ACCESS
 
 #include "simd_access/base.hpp"
+#include "simd_access/index.hpp"
+#include <utility>
 
 namespace simd_access
 {
+
+template<class T>
+concept is_simd_accessible = is_simd_index<T> || is_simd<T>;
+
+inline auto element(const is_simd_index auto& index, int i)
+{
+  return get_index(index, i);
+}
+
+inline decltype(auto) element(is_simd auto&& value, int i)
+{
+  return value[i];
+}
+
+inline auto&& element(auto&& value)
+{
+  return value;
+}
 
 /**
  * Call a function for each scalar of a simd value.
@@ -20,11 +40,26 @@ namespace simd_access
  * @param x Simd value.
  * @param y... More simd values.
  */
-inline void elementwise(auto&& fn, is_simd auto&& x, is_simd auto&&... y)
+inline void elementwise(auto&& fn, is_simd_accessible auto&& x, is_simd_accessible auto&&... y)
 {
   for (int i = 0; i < x.size(); ++i)
   {
-    fn(x[i], y[i]...);
+    fn(element(x, i), element(y, i)...);
+  }
+}
+
+/**
+ * Call a function for each scalar of a simd value.
+ * @param fn Function called for each scalar value of `x` and `y`. If the function intends to write to the element,
+ *   then it must forward its argument as in `[&](auto&& y) { element_write(y) = ...; }`.
+ * @param x Simd value.
+ * @param y... More simd values.
+ */
+inline void elementwise_with_index(auto&& fn, is_simd_accessible auto&& x, is_simd_accessible auto&&... y)
+{
+  for (int i = 0; i < x.size(); ++i)
+  {
+    fn(element(x, i), element(y, i)..., i);
   }
 }
 
@@ -34,9 +69,18 @@ inline void elementwise(auto&& fn, is_simd auto&& x, is_simd auto&&... y)
  * @param fn Function called for `x`.
  * @param x... Scalar values.
  */
-inline void elementwise(auto&& fn, auto&&... x)
+template<class T>
+  requires (!is_simd_accessible<T>)
+inline void elementwise(auto&& fn, T&& x, auto&&... y)
 {
-  fn(x...);
+  fn(x, y...);
+}
+
+template<class T>
+  requires (!is_simd_accessible<T>)
+inline void elementwise_with_index(auto&& fn, T&& x, auto&&... y)
+{
+  fn(x, y...);
 }
 
 /**

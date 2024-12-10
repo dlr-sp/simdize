@@ -280,3 +280,29 @@ TEST(Macro, RValueTest)
     }
   }
 }
+
+/*
+TEST(Macro, NonContinuousStorage)
+{
+  constexpr size_t vec_size = stdx::native_simd<int>::size();
+  std::vector<int> src_values[vec_size];
+  const int test_size = 5;
+  for (int i = 0; i < vec_size; ++i)
+  {
+    src_values[i].resize(test_size);
+    int startValue = 1 * i;
+    for (auto& j : src_values[i])
+    {
+      j = startValue;
+      startValue += (i * 100) + 1;
+    }
+  }
+  for (int j = 0; j < test_size; ++j)
+  {
+    auto result = SIMD_ACCESS_V(src_values, simd_access::index<vec_size>{0}, [j]);
+    for (int i = 0; i < vec_size; ++i)
+    {
+      EXPECT_EQ(result[i], i + ((i * 100) + 1) * j);
+    }
+  }
+}*/
