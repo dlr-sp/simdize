@@ -13,31 +13,62 @@
 namespace simd_access
 {
 
+/// Specifies a location for a simd variable stored in memory as a consecutive sequence of elements.
+/**
+ * @tparam T Value type of the simd variable.
+ * @tparam SimdSize Length of the simd sequence.
+ */
 template<class T, int SimdSize>
 struct linear_location
 {
+  /// Generalized access to `T`.
   using value_type = T;
+  /// Pointer to the first element of the sequence.
   T* base_;
 
+  /// Experimental creation of a linear location for a member of `T`.
+  /**
+   * @tparam Member Pointer to a member variable of `T`.
+   * @return A new `linear_location` with `base->*Member` as first element.
+   */
   template<auto Member>
   auto member_access() const
   {
     return linear_location<std::remove_reference_t<decltype(std::declval<T>().*Member)>, SimdSize>{&(base_->*Member)};
   }
 
+  /// Creation of a linear location for an element of `T`, if `T` is an array.
+  /**
+   * @param i Array element index.
+   * @return A new `linear_location` with `(*base)[i]` as first element.
+   */
   auto array_access(auto i) const
   {
     return linear_location<std::remove_reference_t<decltype((*base_)[i])>, SimdSize>{&((*base_)[i])};
   }
 };
 
+/// Specifies a location for a simd variable with the indices of its values stored in an array.
+/**
+ * @tparam T Value type of the simd variable.
+ * @tparam SimdSize Length of the simd sequence.
+ * @tparam ArrayType Type of the array, which stores the indices.
+ */
 template<class T, int SimdSize, class ArrayType>
 struct indexed_location
 {
+  /// Generalized access to `T`.
   using value_type = T;
+  /// Pointer to element zero of the sequence.
   T* base_;
+  /// Reference to the index array.
   const ArrayType& indices_;
 
+  /// Experimental creation of an indexed location for a member of `T`.
+  /**
+   * @tparam Member Pointer to a member variable of `T`.
+   * @return A new `indexed_location` with `base->*Member` as element zero.
+   */
   template<auto Member>
   auto member_access() const
   {
@@ -45,36 +76,15 @@ struct indexed_location
       {&(base_->*Member), indices_};
   }
 
+  /// Creation of an indexed location for an element of `T`, if `T` is an array.
+  /**
+   * @param i Array element index.
+   * @return A new `indexed_location` with `(*base)[i]` as element zero.
+   */
   auto array_access(auto i) const
   {
     return indexed_location<std::remove_reference_t<decltype((*base_)[i])>, SimdSize, ArrayType>
       {&((*base_)[i]), indices_};
-  }
-};
-
-template<class T, int SimdSize>
-struct random_location
-{
-  using value_type = T;
-  T* base_[SimdSize];
-
-  template<auto Member>
-  auto member_access() const
-  {
-    random_location<std::remove_reference_t<decltype(std::declval<T>().*Member)>, SimdSize> result;
-    for (int i = 0; i < SimdSize; ++i)
-    {
-      result.base_[i] = &(base_[i]->*Member);
-    }
-  }
-
-  auto array_access(auto i) const
-  {
-    random_location<std::remove_pointer_t<decltype(*std::declval<T>())>, SimdSize> result;
-    for (int k = 0; k < SimdSize; ++k)
-    {
-      result.base_[k] = &((*base_[k])[i]);
-    }
   }
 };
 

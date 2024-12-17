@@ -18,16 +18,33 @@ namespace simd_access
 template<class T>
 concept is_simd_accessible = is_simd_index<T> || is_simd<T>;
 
+/// Return a single index of a simd index.
+/**
+ * @param index Simd index.
+ * @param i Index in the simd index.
+ * @return The index at the i'th position of `index`.
+ */
 inline auto element(const is_simd_index auto& index, int i)
 {
   return get_index(index, i);
 }
 
+/// Return a single value of a simd value.
+/**
+ * @param value Simd value.
+ * @param i Index in the simd value.
+ * @return The scalar value at the i'th position of `value`.
+ */
 inline decltype(auto) element(is_simd auto&& value, int i)
 {
   return value[i];
 }
 
+/// Returns a value.
+/**
+ * @param value Any value.
+ * @return `value`.
+ */
 inline auto&& element(auto&& value)
 {
   return value;
@@ -38,7 +55,7 @@ inline auto&& element(auto&& value)
  * @param fn Function called for each scalar value of `x` and `y`. If the function intends to write to the element,
  *   then it must forward its argument as in `[&](auto&& y) { element_write(y) = ...; }`.
  * @param x Simd value.
- * @param y... More simd values.
+ * @param y More simd values.
  */
 inline void elementwise(auto&& fn, is_simd_accessible auto&& x, is_simd_accessible auto&&... y)
 {
@@ -51,9 +68,10 @@ inline void elementwise(auto&& fn, is_simd_accessible auto&& x, is_simd_accessib
 /**
  * Call a function for each scalar of a simd value.
  * @param fn Function called for each scalar value of `x` and `y`. If the function intends to write to the element,
- *   then it must forward its argument as in `[&](auto&& y) { element_write(y) = ...; }`.
+ *   then it must forward its argument as in `[&](auto&& y) { element_write(y) = ...; }`. The last argument of the
+ *   call is the index (ranges from 0 to simd_size). In overloads for scalar values this argument is ommitted.
  * @param x Simd value.
- * @param y... More simd values.
+ * @param y More simd values.
  */
 inline void elementwise_with_index(auto&& fn, is_simd_accessible auto&& x, is_simd_accessible auto&&... y)
 {
@@ -66,8 +84,10 @@ inline void elementwise_with_index(auto&& fn, is_simd_accessible auto&& x, is_si
 /**
  * Call a function for the scalar value `x`.
  * This overload can be used with a generic functor to uniformly access scalar values of simds and scalars.
+ * @tparam T Deduced non-simd type of the scalar value.
  * @param fn Function called for `x`.
- * @param x... Scalar values.
+ * @param x Scalar value.
+ * @param y More values.
  */
 template<class T>
   requires (!is_simd_accessible<T>)
@@ -76,6 +96,14 @@ inline void elementwise(auto&& fn, T&& x, auto&&... y)
   fn(x, y...);
 }
 
+/**
+ * Call a function for the scalar value `x`.
+ * This overload can be used with a generic functor to uniformly access scalar values of simds and scalars.
+ * @tparam T Deduced non-simd type of the scalar value.
+ * @param fn Function called for `x`.
+ * @param x Scalar value.
+ * @param y More values.
+ */
 template<class T>
   requires (!is_simd_accessible<T>)
 inline void elementwise_with_index(auto&& fn, T&& x, auto&&... y)
@@ -96,7 +124,7 @@ inline auto& element_write(std::copyable auto& x)
 
 /**
  * Overloaded function intended to be called for simd::reference types, which are not copyable.
- * @param T Type of the element value.
+ * @tparam T Deduced type of the element value.
  * @param x Element value.
  * @return Rvalue reference to `x`, which can be used in assignment (since only
  *   `simd::reference::operator=(auto&&) &&` is available.

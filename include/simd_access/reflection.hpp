@@ -23,7 +23,7 @@
 
 namespace simd_access
 {
-
+///@cond
 // Forward declarations
 template<class MASK, class T>
 struct where_expression;
@@ -87,7 +87,7 @@ inline void simd_members(std::pair<DestType1, DestType2>& d, const std::pair<Src
   simd_members(d.first, s.first, func);
   simd_members(d.second, s.second, func);
 }
-
+///@endcond
 
 /**
  * Loads a structure-of-simd value from a memory location defined by a base address and an linear index. The simd
@@ -225,7 +225,8 @@ inline void store(const indexed_location<T, SimdSize, IndexArray>& location, con
   const decltype(simdized_value<SimdSize>(std::declval<T>()))& source = expr;
   simd_members(*location.base_, source, [&](auto&& dest, auto&& src)
     {
-      store<ElementSize>(indexed_location<std::remove_reference_t<decltype(dest)>, SimdSize, IndexArray>(&dest, location.indices_), src);
+      using location_type = indexed_location<std::remove_reference_t<decltype(dest)>, SimdSize, IndexArray>;
+      store<ElementSize>(location_type(&dest, location.indices_), src);
     });
 }
 
@@ -235,6 +236,7 @@ inline void store(const indexed_location<T, SimdSize, IndexArray>& location, con
  * @tparam T Deduced structure-of-simd type.
  * @param mask The value of the simd mask.
  * @param dest Reference to the structure-of-simd value, to which `mask` is applied.
+ * @return A `where_expression` combining `mask`and `dest`.
  */
 template<class M, class T>
   requires((!simd_arithmetic<T>) && (!is_stdx_simd<T>))
@@ -251,14 +253,26 @@ inline auto where(const M& mask, T& dest)
 template<class M, class T>
 struct where_expression
 {
+  /// Simd mask.
   M mask_;
+  /// Reference to the masked value.
   T& destination_;
 
+  /// Constructor.
+  /**
+   * @param m Simd mask.
+   * @param dest Reference to the masked value.
+   */
   where_expression(const M& m, T& dest) :
     mask_(m),
     destination_(dest)
   {}
 
+  /// Assignment operator. Only those vector lanes elements are assigned to destination, which are set in the mask.
+  /**
+   * @param source Value to be assigned.
+   * @return Reference to this.
+   */
   auto& operator=(const T& source) &&
   {
     simd_members(destination_, source, [&](auto& d, const auto& s)

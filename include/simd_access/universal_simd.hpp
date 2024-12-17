@@ -2,7 +2,7 @@
 
 /**
  * @file
- * @brief Classes defining base types and concepts.
+ * @brief Universal simd class.
  */
 
 #ifndef SIMD_ACCESS_UNIVERSAL_SIMD
@@ -11,17 +11,34 @@
 #include "simd_access/base.hpp"
 #include "simd_access/index.hpp"
 #include "simd_access/reflection.hpp"
-#include <functional>
+#include <utility>
+#include <array>
 #include <type_traits>
 
 namespace simd_access
 {
 
+/// Universal simd class for non-arithmetic value types.
+/**
+ * @tparam T Value type.
+ * @tparam SimdSize Simd size (number of vector lanes).
+ */
 template<class T, int SimdSize>
 struct universal_simd : std::array<T, SimdSize>
 {
+  /// Static version of `size()` (as provided by `stdx::simd`, but not by `std::array`).
+  /**
+   * @return `SimdSize`
+   */
   static constexpr auto size() { return SimdSize; }
 
+  /// Generator constructor (as provided by `stdx::simd`).
+  /**
+   * The generator constructor constructs a universal simd where the i-th element is initialized to
+   * `generator(std::integral_constant<std::size_t, i>())`.
+   * @tparam G Deduced type of the generator functor.
+   * @param generator Generator functor.
+   */
   template<class G>
   explicit universal_simd(G&& generator) :
     std::array<T, SimdSize>([&]<int... I>(std::integer_sequence<int, I...>) -> std::array<T, SimdSize>
@@ -29,40 +46,86 @@ struct universal_simd : std::array<T, SimdSize>
         return {{ generator(std::integral_constant<int, I>())... }};
       } (std::make_integer_sequence<int, SimdSize>())) {}
 
+  /// Default constructor.
   universal_simd() = default;
 };
 
+/// Uses a generator to create a scalar value. Overloaded for simd indices.
+/**
+ * Unlike the `universal_simd` generator constructor the generator passed to `generate_universal` must handle a
+ * run-time value index.
+ * @param i Integral index value.
+ * @param generator Generator functor.
+ * @return The result of `generator(i)`.
+ */
 inline decltype(auto) generate_universal(std::integral auto i, auto&& generator)
 {
   return generator(i);
 }
 
+/// Uses a generator to create a `universal_simd` value. Overloaded for scalar indices.
+/**
+ * Unlike the `universal_simd` generator constructor the generator passed to `generate_universal` must handle a
+ * run-time value index.
+ * @tparam IndexType Deduced type of the simd index.
+ * @param idx Simd index.
+ * @param generator Generator functor.
+ * @return A `universal_simd` containing the values for the simd index.
+ */
 template<class IndexType>
   requires(!std::integral<IndexType>)
 inline decltype(auto) generate_universal(const IndexType& idx, auto&& generator)
 {
-  return universal_simd<decltype(generator(get_index(idx, 0))), idx.size()>([&](auto i) { return generator(get_index(idx, i)); });
+  return universal_simd<decltype(generator(get_index(idx, 0))), idx.size()>([&](auto i)
+    {
+      return generator(get_index(idx, i));
+    });
 }
 
+/// Accesses a subobject (a member or a member function) of a scalar value. Overloaded for universal simd values.
+/**
+ * @tparam T Deduced non-simd type of the value.
+ * @tparam Func Deduced type of the functor specifying the subobject.
+ * @param v Scalar value.
+ * @param subobject Functor accessing the subobject.
+ * @return The result of `subobject(v)`.
+ */
 template<class T, class Func>
   requires(!is_simd<T>)
-inline decltype(auto) universal_access(const T& v, Func&& subobject)
+inline decltype(auto) universal_access(T&& v, Func&& subobject)
 {
   return subobject(v);
 }
 
+/// Accesses a subobject (a member or a member function) of a universal simd value. Overloaded for scalar values.
+/**
+ * @tparam T Deduced value type of the universal simd.
+ * @tparam SimdSize Simd size (number of vector lanes).
+ * @tparam Func Deduced type of the functor specifying the subobject.
+ * @param v Simd value.
+ * @param subobject Functor accessing the subobject of one entry in the simd value.
+ * @return A simd value holding the result of the calls `subobject(v[i])` for each vector lane.
+ */
 template<class T, int SimdSize, class Func>
 inline auto universal_access(const simd_access::universal_simd<T, SimdSize>& v, Func&& subobject)
 {
-  decltype(simdized_value<SimdSize>(std::declval<decltype(subobject(static_cast<const std::unwrap_reference_t<T>&>(v[0])))>())) result;
+  using ScalarType = decltype(subobject(static_cast<const std::unwrap_reference_t<T>&>(v[0])));
+  decltype(simdized_value<SimdSize>(std::declval<ScalarType>())) result;
   for (int i = 0; i < SimdSize; ++i)
   {
-    simd_members(result, subobject(static_cast<const std::unwrap_reference_t<T>&>(v[i])), [&](auto&& d, auto&& s) { d[i] = s; });
+    simd_members(result, subobject(static_cast<const std::unwrap_reference_t<T>&>(v[i])), [&](auto&& d, auto&& s)
+    { d[i] = s; });
   }
   return result;
 }
 
-
+/// Generalized access of a subobject for scalar and universal simd values.
+/**
+ * `SIMD_UNIVERSAL_ACCESS` replaces the expression `value expr`, if value might be a universal simd value.
+ * @param value A value, which is either a scalar or a universal simd value.
+ * @param expr A token sequence, which forms a valid `v expr` sequence for a scalar `v`. If `value` is a universal simd,
+ *   then `v` is an entry, otherwise `v` is `value`.
+ */
 #define SIMD_UNIVERSAL_ACCESS(value, expr) \
   simd_access::universal_access(value, [&](auto&& element) { return element expr; })
 

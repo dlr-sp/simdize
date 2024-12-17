@@ -8,7 +8,6 @@
 #ifndef SIMD_ACCESS_BASE
 #define SIMD_ACCESS_BASE
 
-#include <array>
 #include <experimental/simd>
 #include <type_traits>
 namespace stdx = std::experimental;
@@ -16,6 +15,7 @@ namespace stdx = std::experimental;
 namespace simd_access
 {
 
+/// Forward declaration
 template<class T, int SimdSize>
 struct universal_simd;
 
@@ -32,19 +32,35 @@ concept is_simd =
   is_stdx_simd<PotentialSimdType> ||
   requires(std::remove_cvref_t<PotentialSimdType> x) { []<class T, int SimdSize>(universal_simd<T, SimdSize>&){}(x); };
 
-
+/// Helper class to auto-generate either a `stdx::simd` or - if not applicable - a \ref universal_simd.
+/**
+ * @tparam T Value type.
+ * @tparam SimdSize Requested simd size.
+ */
 template<class T, int SimdSize>
 struct auto_simd
 {
+  /// Universal simd type.
   using type = universal_simd<T, SimdSize>;
 };
 
+/// Specialization of \ref auto_simd for the `stdx::simd` variant,
+/**
+ * @tparam T Arithmetic value type.
+ * @tparam SimdSize Requested simd size.
+ */
 template<simd_arithmetic T, int SimdSize>
 struct auto_simd<T, SimdSize>
 {
+  /// stdx::simd type.
   using type = stdx::fixed_size_simd<T, SimdSize>;
 };
 
+/// Type which resolves either to `stdx::simd` or - if not applicable - a \ref universal_simd.
+/**
+ * @tparam T Value type. If arithmetic, the resulting type is a `stdx::simd`. Otherwise it is a `universal_simd`.
+ * @tparam SimdSize Requested simd size.
+ */
 template<class T, int SimdSize>
 using auto_simd_t = typename auto_simd<T, SimdSize>::type;
 

@@ -14,16 +14,32 @@
 namespace simd_access
 {
 
+/// Creates a binary operator overload for a simd value access as member.
+/**
+ * @param op Token for a binary operator (e.g. +,-,*,/).
+ */
 #define VALUE_ACCESS_BIN_OP( op ) \
   auto operator op(const auto& source) { return to_simd() op source; }
 
+/// Creates a binary assignment operator overload for a simd value access.
+/**
+ * @param op Token for a binary operator (e.g. +,-,*,/).
+ */
 #define VALUE_ACCESS_BIN_ASSIGNMENT_OP( op ) \
   void operator op##=(const auto& source) && { store<ElementSize>(location_, to_simd() op source); }
 
+/// Creates a binary assignment and a binary operator overload for a simd value access.
+/**
+ * @param op Token for a binary operator (e.g. +,-,*,/).
+ */
 #define VALUE_ACCESS_MEMBER_OPS( op ) \
   VALUE_ACCESS_BIN_OP( op ) \
   VALUE_ACCESS_BIN_ASSIGNMENT_OP( op )
 
+/// Creates a global binary operator overload for a simd value access.
+/**
+ * @param op Token for a binary operator (e.g. +,-,*,/).
+ */
 #define VALUE_ACCESS_SCALAR_BIN_OP( op ) \
   template<class Location, size_t ElementSize> \
   inline auto operator op(const auto& o1, const value_access<Location, ElementSize>& o2) \
@@ -33,10 +49,10 @@ namespace simd_access
 
 /// Class representing a simd-access (read or write) to a memory location.
 /**
- * @tparam Location Type of the location of the simd data.
  * @tparam ElementSize Size of the array elements, which (or one of its members) are accessed by the simd index.
+ * @tparam Location Type of the location of the simd data.
  */
-template<class Location, size_t ElementSize = 0>
+template<class Location, size_t ElementSize>
 class value_access :
   public member_overload<typename Location::value_type, value_access<Location, ElementSize>>,
   public cast_overload<typename Location::value_type, value_access<Location, ElementSize>>
@@ -67,7 +83,7 @@ public:
     return load<ElementSize>(location_);
   }
 
-  /// Implementation of overloaded member operator, i.e. operator.()
+  /// Experimental implementation of overloaded member operator, i.e. operator.()
   /**
    * Since `T` might be of non-class type, one cannot specify `auto T::*Member` as a template argument here.
    * @tparam Member Pointer to the member of the class T.
@@ -90,14 +106,25 @@ public:
   }
 
   /// Constructor.
+  /**
+   * @param location The location specification of the accessed simd variable.
+   */
   value_access(const Location& location) :
     location_(location)
   {}
 
 private:
+  /// The location specification of the accessed simd variable.
   Location location_;
 };
 
+/// Factory function for `value_access`.
+/**
+ * @tparam ElementSize Size of the array elements, which (or one of its members) are accessed by the simd index.
+ * @tparam Location Deduced type of the location of the simd data.
+ * @param location The location specification of the accessed simd variable.
+ * @return A `value_access` object representing a simd-access (read or write) to a memory location.
+ */
 template<size_t ElementSize, class Location>
 inline auto make_value_access(const Location& location)
 {

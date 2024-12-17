@@ -15,9 +15,13 @@
 namespace simd_access
 {
 
+/// Type for scalar residual loop policy.
 using ScalarResidualLoopT = std::integral_constant<int, 0>;
+/// Type for vector residual loop policy.
 using VectorResidualLoopT = std::integral_constant<int, 1>;
+/// Value for scalar residual loop policy.
 constexpr auto ScalarResidualLoop = ScalarResidualLoopT();
+/// Value for vector residual loop policy.
 constexpr auto VectorResidualLoop = VectorResidualLoopT();
 
 /**

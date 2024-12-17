@@ -8,9 +8,11 @@
 #ifndef SIMD_ACCESS_INDEX
 #define SIMD_ACCESS_INDEX
 
+#include <concepts>
+#include <type_traits>
+
 #include "simd_access/base.hpp"
 #include "simd_access/location.hpp"
-#include <type_traits>
 
 namespace simd_access
 {
@@ -21,7 +23,7 @@ class value_access;
 /// Class representing a simd index to a consecutive sequence of elements.
 /**
  * @tparam SimdSize Length of the simd sequence.
- * @tparam IndexType Type of the index.
+ * @tparam IndexType Type of the scalar index.
  */
 template<int SimdSize, class IndexType = size_t>
 struct index
@@ -113,19 +115,43 @@ concept is_simd_index =
 
 /// TODO: Introduce masked_index and masked_index_array to support e.g. residual masked loops.
 
+/// Returns the scalar index of a specific vector lane for a linear index.
+/**
+ * @tparam SimdSize Deduced simd size.
+ * @tparam IndexType Deduced type of the scalar index.
+ * @param idx Linear simd index.
+ * @param i Vector lane.
+ * @return The scalar index at vector lane `i`, i.e. `idx.start + i`.
+ */
 template<int SimdSize, class IndexType>
 inline auto get_index(const index<SimdSize, IndexType>& idx, auto i)
 {
   return idx.scalar_index(i);
 }
 
+/// Returns the scalar index of a specific vector lane for an indirect index.
+/**
+ * @tparam SimdSize Deduced simd size.
+ * @tparam ArrayType Type of the array, which stores the indices.
+ * @param idx Indirect simd index.
+ * @param i Vector lane.
+ * @return The scalar index at vector lane `i`, i.e. `idx.indices[i]`.
+ */
 template<int SimdSize, class ArrayType>
 inline auto get_index(const index_array<SimdSize, ArrayType>& idx, auto i)
 {
   return idx.scalar_index(i);
 }
 
-template<class IndexType, class Abi>
+/// Returns the scalar index of a specific vector lane for an indirect index u.
+/**
+ * @tparam IndexType Deduced integral type of the scalar index.
+ * @tparam Abi Deduced abi of the `simd` paramter.
+ * @param idx Indirect simd index.
+ * @param i Vector lane.
+ * @return The scalar index at vector lane `i`, i.e. `idx[i]`.
+ */
+template<std::integral IndexType, class Abi>
 inline auto get_index(const stdx::simd<IndexType, Abi>& idx, auto i)
 {
   return idx[i];
