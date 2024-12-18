@@ -113,29 +113,34 @@ inline auto load(const indexed_location<T, SimdSize, ArrayType>& location)
 /**
  * Creates a simd value from rvalues returned by the operator[] applied to `base`.
  * @tparam BaseType Type of an simd element.
+ * @tparam IndexType Deduced simd index type.
  * @param base Base object.
  * @param idx Index.
  * @return A simd value.
  */
-template<simd_arithmetic BaseType>
-inline auto load_rvalue(auto&& base, const auto& idx)
+template<simd_arithmetic BaseType, is_simd_index IndexType>
+inline auto load_rvalue(auto&& base, const IndexType& idx)
 {
-  return stdx::fixed_size_simd<BaseType, idx.size()>([&](auto i) { return base[get_index(idx, i)]; });
+  return stdx::fixed_size_simd<BaseType, IndexType::size()>([&](auto i) { return base[get_index(idx, i)]; });
 }
 
 /**
  * Creates a simd value from rvalues returned by the functor `subobject` applied to the range of elements defined by
  * the simd index `idx`.
  * @tparam BaseType Type of an simd element.
+ * @tparam IndexType Deduced simd index type.
  * @param base Base object.
  * @param idx Index.
  * @param subobject Functor returning the sub-object.
  * @return A simd value.
  */
-template<simd_arithmetic BaseType>
-inline auto load_rvalue(auto&& base, const auto& idx, auto&& subobject)
+template<simd_arithmetic BaseType, is_simd_index IndexType>
+inline auto load_rvalue(auto&& base, const IndexType& idx, auto&& subobject)
 {
-  return stdx::fixed_size_simd<BaseType, idx.size()>([&](auto i) { return subobject(base[get_index(idx, i)]); });
+  return stdx::fixed_size_simd<BaseType, IndexType::size()>([&](auto i)
+  {
+    return subobject(base[get_index(idx, i)]);
+  });
 }
 
 } //namespace simd_access

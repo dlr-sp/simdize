@@ -152,13 +152,14 @@ inline const auto& get_element(const auto& x)
 /**
  * Returns a particular element of a simd type.
  * @tparam I Number of the element. Must be smaller then `x.size()`.
+ * @tparam ValueType Deduced simd type.
  * @param x Simd value.
  * @return Value of `x[I]`.
  */
-template<int I>
-inline decltype(auto) get_element(const is_simd auto& x)
+template<int I, is_simd ValueType>
+inline decltype(auto) get_element(const ValueType& x)
 {
-  static_assert(I < x.size());
+  static_assert(I < ValueType::size());
   return x[I];
 }
 

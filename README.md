@@ -236,3 +236,4 @@ TODO
 ### Build Requirements
 
 The lib is header-only. The tests need cmake and a c++20 compliant compiler.
+Note, that the tests use class template argument deduction for aggregates, thus for clang a version >= 17 is required.

@@ -106,7 +106,7 @@ inline auto load(const linear_location<T, SimdSize>& location)
   auto result = simdized_value<SimdSize>(*location.base_);
   simd_members(result, *location.base_, [&](auto&& dest, auto&& src)
     {
-      dest = load<ElementSize>(linear_location<std::remove_reference_t<decltype(src)>, SimdSize>(&src));
+      dest = load<ElementSize>(linear_location<std::remove_reference_t<decltype(src)>, SimdSize>{&src});
     });
   return result;
 }
@@ -116,16 +116,17 @@ inline auto load(const linear_location<T, SimdSize>& location)
  * the simd index `idx`.
  * @tparam BaseType Type of the scalar structure, of which `SimdSize` number of objects will be combined in a
  *   structure-of-simd.
+ * @tparam IndexType Deduced simd index type.
  * @param base Base object.
  * @param idx Linear index.
  * @param subobject Functor returning the sub-object.
  * @return A simd value.
  */
-template<class BaseType>
+template<class BaseType, is_simd_index IndexType>
   requires (!simd_arithmetic<BaseType>)
-inline auto load_rvalue(auto&& base, const auto& idx, auto&& subobject)
+inline auto load_rvalue(auto&& base, const IndexType& idx, auto&& subobject)
 {
-  decltype(simdized_value<idx.size()>(std::declval<BaseType>())) result;
+  decltype(simdized_value<IndexType::size()>(std::declval<BaseType>())) result;
   for (decltype(idx.size()) i = 0, e = idx.size(); i < e; ++i)
   {
     simd_members(result, subobject(base[get_index(idx, i)]), [&](auto&& dest, auto&& src)
@@ -140,15 +141,16 @@ inline auto load_rvalue(auto&& base, const auto& idx, auto&& subobject)
  * Creates a simd value from rvalues returned by the operator[] applied to `base`.
  * @tparam BaseType Type of the scalar structure, of which `SimdSize` number of objects will be combined in a
  *   structure-of-simd.
+ * @tparam IndexType Deduced simd index type.
  * @param base Base object.
  * @param idx Linear index.
  * @return A simd value.
  */
-template<class BaseType>
+template<class BaseType, is_simd_index IndexType>
   requires (!simd_arithmetic<BaseType>)
-inline auto load_rvalue(auto&& base, const auto& idx)
+inline auto load_rvalue(auto&& base, const IndexType& idx)
 {
-  decltype(simdized_value<idx.size()>(std::declval<BaseType>())) result;
+  decltype(simdized_value<IndexType::size()>(std::declval<BaseType>())) result;
   for (decltype(idx.size()) i = 0, e = idx.size(); i < e; ++i)
   {
     simd_members(result, base[get_index(idx, i)], [&](auto&& dest, auto&& src)
@@ -178,7 +180,7 @@ inline void store(const linear_location<T, SimdSize>& location, const ExprType& 
   simd_members(*location.base_, source, [&](auto&& dest, auto&& src)
     {
       store<ElementSize>(
-        linear_location<std::remove_reference_t<decltype(dest)>, SimdSize>(&dest), src);
+        linear_location<std::remove_reference_t<decltype(dest)>, SimdSize>{&dest}, src);
     });
 }
 
@@ -200,8 +202,8 @@ inline auto load(const indexed_location<T, SimdSize, IndexArray>& location)
   auto result = simdized_value<SimdSize>(*location.base_);
   simd_members(result, *location.base_, [&](auto&& dest, auto&& src)
     {
-      dest = load<ElementSize>(indexed_location<std::remove_reference_t<decltype(src)>, SimdSize, IndexArray>(
-        &src, location.indices_));
+      dest = load<ElementSize>(indexed_location<std::remove_reference_t<decltype(src)>, SimdSize, IndexArray>{
+        &src, location.indices_});
     });
   return result;
 }
@@ -226,7 +228,7 @@ inline void store(const indexed_location<T, SimdSize, IndexArray>& location, con
   simd_members(*location.base_, source, [&](auto&& dest, auto&& src)
     {
       using location_type = indexed_location<std::remove_reference_t<decltype(dest)>, SimdSize, IndexArray>;
-      store<ElementSize>(location_type(&dest, location.indices_), src);
+      store<ElementSize>(location_type{&dest, location.indices_}, src);
     });
 }
 

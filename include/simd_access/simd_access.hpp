@@ -184,7 +184,8 @@ struct LValueSeparator<true>
   template<size_t ElementSize, class T, std::integral IndexType, class Abi>
   static auto get_direct_value_access(T* base, const stdx::simd<IndexType, Abi>& idx)
   {
-    return make_value_access<ElementSize>(indexed_location<T, idx.size(), stdx::simd<IndexType, Abi>>{base, idx});
+    using location_type = indexed_location<T, stdx::simd<IndexType, Abi>::size(), stdx::simd<IndexType, Abi>>;
+    return make_value_access<ElementSize>(location_type{base, idx});
   }
 
   /// Creates a value access object for an arbitrary simd access.
