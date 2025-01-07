@@ -36,12 +36,12 @@ inline auto simdized_value(const Point<T>& t)
   return Point{simdized_value<SimdSize>(t.x_), simdized_value<SimdSize>(t.x_)};
 }
 
-template<class DestType, class SrcType, class FN>
-inline void simd_members(Point<DestType>& d, const Point<SrcType>& s, FN&& func)
+template<simd_access::is_specialization_of<Point>... Args>
+inline void simd_members(auto&& func, Args&&... values)
 {
   using simd_access::simd_members;
-  simd_members(d.x_, s.x_, func);
-  simd_members(d.y_, s.y_, func);
+  simd_members(func, values.x_ ...);
+  simd_members(func, values.y_ ...);
 }
 
 }

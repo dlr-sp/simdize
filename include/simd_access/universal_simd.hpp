@@ -113,8 +113,9 @@ inline auto universal_access(const simd_access::universal_simd<T, SimdSize>& v, 
   decltype(simdized_value<SimdSize>(std::declval<ScalarType>())) result;
   for (int i = 0; i < SimdSize; ++i)
   {
-    simd_members(result, subobject(static_cast<const std::unwrap_reference_t<T>&>(v[i])), [&](auto&& d, auto&& s)
-    { d[i] = s; });
+    simd_members([&](auto&& d, auto&& s)
+    { d[i] = s; },
+    result, subobject(static_cast<const std::unwrap_reference_t<T>&>(v[i])));
   }
   return result;
 }
