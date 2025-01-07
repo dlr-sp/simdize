@@ -21,7 +21,12 @@ struct universal_simd;
 
 template<typename T>
 concept simd_arithmetic =
-  std::is_arithmetic_v<T> && !std::is_same_v<T, bool>;
+  std::is_arithmetic_v<std::remove_cvref_t<T>> && !std::is_same_v<std::remove_cvref_t<T>, bool>;
+
+// This works only without non-type template parameters. Hopefully there will be a universal solution (see p2989).
+template<class TestClass, template<typename...> typename ClassTemplate>
+concept is_specialization_of =
+  requires(std::remove_cvref_t<TestClass> x) { []<typename... Args>(ClassTemplate<Args...>&){}(x); };
 
 template<class PotentialSimdType>
 concept is_stdx_simd =

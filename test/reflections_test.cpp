@@ -42,6 +42,12 @@ struct TestData
       v[i].y[1] = i + 2000;
     }
   }
+
+  // deliberately return an rvalue:
+  TestStruct<double> operator[](int i)
+  {
+    return v[i];
+  }
 };
 
 template<int SimdSize, class T>
@@ -51,13 +57,13 @@ inline auto simdized_value(const TestStruct<T>& t)
   return TestStruct<decltype(simdized_value<SimdSize>(t.x))>();
 }
 
-template<class DestType, class SrcType, class FN>
-inline void simd_members(TestStruct<DestType>& d, const TestStruct<SrcType>& s, FN&& func)
+template<simd_access::is_specialization_of<TestStruct>... Args>
+inline void simd_members(auto&& func, Args&&... values)
 {
   using simd_access::simd_members;
-  simd_members(d.x, s.x, func);
-  simd_members(d.y[0], s.y[0], func);
-  simd_members(d.y[1], s.y[1], func);
+  simd_members(func, values.x ...);
+  simd_members(func, values.y[0] ...);
+  simd_members(func, values.y[1] ...);
 }
 
 }
@@ -85,6 +91,17 @@ TEST(Reflections, RValueAccess)
 {
   TestData src;
   constexpr size_t vec_size = stdx::native_simd<double>::size();
+
+  {
+    simd_access::index<vec_size> index{3};
+    auto ts = SIMD_ACCESS(src, index);
+    for (int j = 0; j < vec_size; ++j)
+    {
+      EXPECT_EQ(ts.x[j], j + 3);
+      EXPECT_EQ(ts.y[0][j], j + 1003);
+      EXPECT_EQ(ts.y[1][j], j + 2003);
+    }
+  }
 
   {
     simd_access::index<vec_size> index{3};
@@ -141,6 +158,36 @@ TEST(Reflections, OperatorOverload)
   }
 }
 
+TEST(Reflections, ConditionalAssignment)
+{
+  TestData dest, src;
+  constexpr size_t vec_size = stdx::native_simd<double>::size();
+  using simd_access::where;
+  stdx::fixed_size_simd_mask<double, vec_size> mask;
+  for (int i = 0; i < vec_size; ++i)
+  {
+    mask[i] = i % 2 == 0;
+  }
+
+  auto loop_size = (src.v.size() / vec_size) * vec_size;
+  simd_access::loop<vec_size>(0, loop_size, [&](auto i)
+  {
+    auto result = SIMD_ACCESS_V(src.v, i);
+    where(mask, result) = SIMD_ACCESS(src.v, i) + SIMD_ACCESS(src.v, i);
+    SIMD_ACCESS(dest.v, i) = result;
+  }, simd_access::VectorResidualLoop);
+
+  for (int i = 0; i < loop_size; ++i)
+  {
+    auto factor = (i % 2 == 0) ? 2 : 1;
+    EXPECT_EQ(dest.v[i].x, i * factor);
+    EXPECT_EQ(dest.v[i].y[0], (i + 1000) * factor);
+    EXPECT_EQ(dest.v[i].y[1], (i + 2000) * factor);
+  }
+}
+
+
+
 TEST(Reflections, StructuralReduction)
 {
   TestData src;
@@ -154,7 +201,7 @@ TEST(Reflections, StructuralReduction)
     auto result = SIMD_ACCESS_V(src.v, elemIdx);
     simd_access::elementwise_with_index([&](auto elemIndexScalar, auto... i)
     {
-      simd_members(dest[elemIndexScalar], result, [&](auto& d, const auto& s) { d += simd_access::element(s, i...); });
+      simd_members([&](auto& d, const auto& s) { d += simd_access::element(s, i...); }, dest[elemIndexScalar], result);
     }, elemIdx);
     SIMD_ACCESS(faultdest, elemIdx, .x) += result.x;
   });

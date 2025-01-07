@@ -8,7 +8,8 @@
  * structure-of-simd variables mimic their scalar counterpart. The user must provide two functions:
  * 1. `simdized_value` takes a scalar variable and returns a simdized (and potentially initialized)
  *   variable of the same type.
- * 2. `simd_members` takes two scalar or simdized variables and iterates over all simdized members calling a functor.
+ * 2. `simd_members` takes a pack of scalar or simdized variables and iterates over all simdized members
+ *   calling a functor.
  */
 
 #ifndef SIMD_REFLECTION
@@ -28,26 +29,26 @@ namespace simd_access
 template<class MASK, class T>
 struct where_expression;
 
-template<class FN, simd_arithmetic DestType, simd_arithmetic SrcType>
-inline void simd_members(DestType& d, const SrcType& s, FN&& func)
+template<class FN, simd_arithmetic... Types>
+inline void simd_members(FN&& func, Types&&... values)
 {
-  func(d, s);
+  func(values...);
 }
 
-template<class FN, is_stdx_simd DestType, is_stdx_simd SrcType>
-inline void simd_members(DestType& d, const SrcType& s, FN&& func)
+template<class FN, is_stdx_simd... Types>
+inline void simd_members(FN&& func, Types&&... values)
 {
-  func(d, s);
+  func(values...);
 }
 
 template<class FN, is_stdx_simd DestType>
-inline void simd_members(DestType& d, const typename DestType::value_type& s, FN&& func)
+inline void simd_members(FN&& func, DestType& d, const typename DestType::value_type& s)
 {
   func(d, s);
 }
 
 template<class FN, is_stdx_simd SrcType>
-inline void simd_members(typename SrcType::value_type& d, const SrcType& s, FN&& func)
+inline void simd_members(FN&& func, typename SrcType::value_type& d, const SrcType& s)
 {
   func(d, s);
 }
@@ -66,12 +67,14 @@ inline auto simdized_value(const std::vector<T>& v)
   return result;
 }
 
-template<class DestType, class SrcType, class FN>
-inline void simd_members(std::vector<DestType>& d, const std::vector<SrcType>& s, FN&& func)
+
+template<simd_access::is_specialization_of<std::vector>... Args>
+inline void simd_members(auto&& func, Args&&... values)
 {
+  auto&& d = std::get<0>(std::forward_as_tuple(std::forward<Args>(values)...));
   for (decltype(d.size()) i = 0, e = d.size(); i < e; ++i)
   {
-    simd_members(d[i], s[i], func);
+    simd_members(func, values[i] ...);
   }
 }
 
@@ -81,11 +84,11 @@ inline auto simdized_value(const std::pair<T, U>& v)
   return std::make_pair(simdized_value<SimdSize>(v.first), simdized_value<SimdSize>(v.second));
 }
 
-template<class DestType1, class DestType2, class SrcType1, class SrcType2, class FN>
-inline void simd_members(std::pair<DestType1, DestType2>& d, const std::pair<SrcType1, SrcType2>& s, FN&& func)
+template<simd_access::is_specialization_of<std::pair>... Args>
+inline void simd_members(auto&& func, Args&&... values)
 {
-  simd_members(d.first, s.first, func);
-  simd_members(d.second, s.second, func);
+  simd_members(func, values.first ...);
+  simd_members(func, values.second ...);
 }
 ///@endcond
 
@@ -104,10 +107,11 @@ template<size_t ElementSize, class T, int SimdSize>
 inline auto load(const linear_location<T, SimdSize>& location)
 {
   auto result = simdized_value<SimdSize>(*location.base_);
-  simd_members(result, *location.base_, [&](auto&& dest, auto&& src)
+  simd_members([&](auto&& dest, auto&& src)
     {
       dest = load<ElementSize>(linear_location<std::remove_reference_t<decltype(src)>, SimdSize>{&src});
-    });
+    },
+    result, *location.base_);
   return result;
 }
 
@@ -129,10 +133,11 @@ inline auto load_rvalue(auto&& base, const IndexType& idx, auto&& subobject)
   decltype(simdized_value<IndexType::size()>(std::declval<BaseType>())) result;
   for (decltype(idx.size()) i = 0, e = idx.size(); i < e; ++i)
   {
-    simd_members(result, subobject(base[get_index(idx, i)]), [&](auto&& dest, auto&& src)
+    simd_members([&](auto&& dest, auto&& src)
       {
         dest[i] = src;
-      });
+      },
+      result, subobject(base[get_index(idx, i)]));
   }
   return result;
 }
@@ -153,10 +158,11 @@ inline auto load_rvalue(auto&& base, const IndexType& idx)
   decltype(simdized_value<IndexType::size()>(std::declval<BaseType>())) result;
   for (decltype(idx.size()) i = 0, e = idx.size(); i < e; ++i)
   {
-    simd_members(result, base[get_index(idx, i)], [&](auto&& dest, auto&& src)
+    simd_members([&](auto&& dest, auto&& src)
       {
         dest[i] = src;
-      });
+      },
+      result, base[get_index(idx, i)]);
   }
   return result;
 }
@@ -177,11 +183,12 @@ template<size_t ElementSize, class T, class ExprType, int SimdSize>
 inline void store(const linear_location<T, SimdSize>& location, const ExprType& expr)
 {
   const decltype(simdized_value<SimdSize>(std::declval<T>()))& source = expr;
-  simd_members(*location.base_, source, [&](auto&& dest, auto&& src)
+  simd_members([&](auto&& dest, auto&& src)
     {
       store<ElementSize>(
         linear_location<std::remove_reference_t<decltype(dest)>, SimdSize>{&dest}, src);
-    });
+    },
+    *location.base_, source);
 }
 
 /**
@@ -200,11 +207,12 @@ template<size_t ElementSize, class T, int SimdSize, class IndexArray>
 inline auto load(const indexed_location<T, SimdSize, IndexArray>& location)
 {
   auto result = simdized_value<SimdSize>(*location.base_);
-  simd_members(result, *location.base_, [&](auto&& dest, auto&& src)
+  simd_members([&](auto&& dest, auto&& src)
     {
       dest = load<ElementSize>(indexed_location<std::remove_reference_t<decltype(src)>, SimdSize, IndexArray>{
         &src, location.indices_});
-    });
+    },
+    result, *location.base_);
   return result;
 }
 
@@ -225,11 +233,11 @@ template<size_t ElementSize, class T, class ExprType, int SimdSize, class IndexA
 inline void store(const indexed_location<T, SimdSize, IndexArray>& location, const ExprType& expr)
 {
   const decltype(simdized_value<SimdSize>(std::declval<T>()))& source = expr;
-  simd_members(*location.base_, source, [&](auto&& dest, auto&& src)
+  simd_members([&](auto&& dest, auto&& src)
     {
       using location_type = indexed_location<std::remove_reference_t<decltype(dest)>, SimdSize, IndexArray>;
       store<ElementSize>(location_type{&dest, location.indices_}, src);
-    });
+    }, *location.base_, source);
 }
 
 /**
@@ -277,12 +285,12 @@ struct where_expression
    */
   auto& operator=(const T& source) &&
   {
-    simd_members(destination_, source, [&](auto& d, const auto& s)
+    simd_members([&](auto& d, const auto& s)
       {
         using stdx::where;
         using simd_access::where;
         where(mask_, d) = s;
-      });
+      }, destination_, source);
     return *this;
   }
 };

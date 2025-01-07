@@ -1,6 +1,5 @@
 
 #include "benchmark/benchmark.h"
-#include <experimental/bits/simd.h>
 #include <vector>
 #include <iostream>
 

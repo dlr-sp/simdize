@@ -1,6 +1,5 @@
 
 #include "benchmark/benchmark.h"
-#include <experimental/bits/simd.h>
 #include <vector>
 #include <iostream>
 
@@ -26,12 +25,12 @@ inline auto simdized_value(const Point<T>& t)
   return Point{simdized_value<SimdSize>(t.x), simdized_value<SimdSize>(t.y)};
 }
 
-template<class DestType, class SrcType, class FN>
-inline void simd_members(Point<DestType>& d, const Point<SrcType>& s, FN&& func)
+template<simd_access::is_specialization_of<Point>... Args>
+inline void simd_members(auto&& func, Args&&... values)
 {
   using sa::simd_members;
-  simd_members(d.x, s.x, func);
-  simd_members(d.y, s.y, func);
+  simd_members(func, values.x ...);
+  simd_members(func, values.y ...);
 }
 
 
