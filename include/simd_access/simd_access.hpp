@@ -11,6 +11,7 @@
 #include <concepts>
 
 #include "simd_access/base.hpp"
+#include "simd_access/cast.hpp"
 #include "simd_access/element_access.hpp"
 #include "simd_access/index.hpp"
 #include "simd_access/load_store.hpp"

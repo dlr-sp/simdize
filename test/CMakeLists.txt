@@ -2,6 +2,7 @@ enable_testing()
 
 add_executable(
   simd_access_test
+  cast_test.cpp
   elementwise_test.cpp
   index_test.cpp
   loop_test.cpp
