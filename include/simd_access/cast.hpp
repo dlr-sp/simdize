@@ -63,7 +63,7 @@ using simdized_by_index_t = typename simdized_by_index<T, IndexType>::type;
  *   Otherwise `value`.
  */
 template<class IndexType>
-auto simd_cast(auto&& value)
+auto simd_broadcast(auto&& value)
 {
   if constexpr (is_simd_index<IndexType>)
   {

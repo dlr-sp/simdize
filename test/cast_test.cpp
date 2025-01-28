@@ -49,7 +49,7 @@ TEST(Cast, DependentContext)
     {
       // this doesn't compile, an explicit cast is needed
       //SIMD_ACCESS(dest, i) = 2.0 * SIMD_ACCESS(src, i);
-      SIMD_ACCESS(dest, i) = simd_access::simd_cast<decltype(i)>(2.0) * SIMD_ACCESS(src, i);
+      SIMD_ACCESS(dest, i) = simd_access::simd_broadcast<decltype(i)>(2.0) * SIMD_ACCESS(src, i);
     });
 
   for (int i = 0; i < size; ++i)
