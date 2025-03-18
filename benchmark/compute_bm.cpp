@@ -29,9 +29,7 @@ void HeatCPUAndStack(benchmark::State& state)
   }
 }
 
-enum class Operation { Add, Sub, Mul, Div };
-
-template<class T, Operation OP>
+template<class T, class OP>
 void SingleComputation(benchmark::State& state)
 {
   T result, data[2] = { 1., 1. };
@@ -39,22 +37,7 @@ void SingleComputation(benchmark::State& state)
   for (auto _ : state)
   {
     benchmark::DoNotOptimize(data);
-    if constexpr (OP == Operation::Add)
-    {
-      result = data[0] + data[1];
-    }
-    else if constexpr (OP == Operation::Sub)
-    {
-      result = data[0] - data[1];
-    }
-    else if constexpr (OP == Operation::Mul)
-    {
-      result = data[0] * data[1];
-    }
-    else if constexpr (OP == Operation::Div)
-    {
-      result = data[0] / data[1];
-    }
+    result = OP{}(data[0], data[1]);
     benchmark::DoNotOptimize(result);
   }
 }
@@ -62,9 +45,9 @@ void SingleComputation(benchmark::State& state)
 
 BENCHMARK_TEMPLATE(HeatCPUAndStack, double);
 BENCHMARK_TEMPLATE(HeatCPUAndStack, fixed_simd<double>);
-BENCHMARK_TEMPLATE(SingleComputation, double, Operation::Add);
-BENCHMARK_TEMPLATE(SingleComputation, fixed_simd<double>, Operation::Add);
-BENCHMARK_TEMPLATE(SingleComputation, double, Operation::Mul);
-BENCHMARK_TEMPLATE(SingleComputation, fixed_simd<double>, Operation::Mul);
-BENCHMARK_TEMPLATE(SingleComputation, double, Operation::Div);
-BENCHMARK_TEMPLATE(SingleComputation, fixed_simd<double>, Operation::Div);
+BENCHMARK_TEMPLATE(SingleComputation, double, std::plus<>);
+BENCHMARK_TEMPLATE(SingleComputation, fixed_simd<double>, std::plus<>);
+BENCHMARK_TEMPLATE(SingleComputation, double, std::multiplies<>);
+BENCHMARK_TEMPLATE(SingleComputation, fixed_simd<double>, std::multiplies<>);
+BENCHMARK_TEMPLATE(SingleComputation, double, std::divides<>);
+BENCHMARK_TEMPLATE(SingleComputation, fixed_simd<double>, std::divides<>);

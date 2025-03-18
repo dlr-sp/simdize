@@ -3,6 +3,7 @@ add_executable(
   compute_bm.cpp
   loop_bm.cpp
   universal_bm.cpp
+  reduction_bm.cpp
   reflection_bm.cpp
 )
 target_link_libraries(

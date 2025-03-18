@@ -224,15 +224,6 @@ If you use `VectorResidualLoop`, the loop body is not instantiated for scalar in
     }, VectorResidualLoop);
 ```
 
-
-### A globally overloadable subscription operator (`operator[]`)
-
-TODO
-
-### An overloadable member access operator (`operator.`)
-
-TODO
-
 ### Build Requirements
 
 The lib is header-only. The tests need cmake and a c++20 compliant compiler.
