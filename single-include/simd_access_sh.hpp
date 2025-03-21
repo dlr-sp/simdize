@@ -36,12 +36,12 @@ concept simd_arithmetic =
   std::is_arithmetic_v<T> && !std::is_same_v<T, bool>;
 
 template<class PotentialSimdType>
-concept is_stdx_simd =
+concept stdx_simd =
   requires(PotentialSimdType x) { []<class T, class Abi>(stdx::simd<T, Abi>&){}(x); };
 
 template<class PotentialSimdType>
-concept is_simd =
-  is_stdx_simd<PotentialSimdType> ||
+concept any_simd =
+  stdx_simd<PotentialSimdType> ||
   requires(PotentialSimdType x) { []<class T, int SimdSize>(universal_simd<T, SimdSize>&){}(x); };
 
 template<class T, int SimdSize>
@@ -99,12 +99,12 @@ concept simd_arithmetic =
   std::is_arithmetic_v<T> && !std::is_same_v<T, bool>;
 
 template<class PotentialSimdType>
-concept is_stdx_simd =
+concept stdx_simd =
   requires(PotentialSimdType x) { []<class T, class Abi>(stdx::simd<T, Abi>&){}(x); };
 
 template<class PotentialSimdType>
-concept is_simd =
-  is_stdx_simd<PotentialSimdType> ||
+concept any_simd =
+  stdx_simd<PotentialSimdType> ||
   requires(PotentialSimdType x) { []<class T, int SimdSize>(universal_simd<T, SimdSize>&){}(x); };
 
 template<class T, int SimdSize>
@@ -135,7 +135,7 @@ namespace simd_access
  * @param fn Function called for each scalar value of `x`. If the function intends to write to the element, then it
  *   must forward its argument as in `[&](auto&& y) { element_write(y) = ...; }`.
  */
-inline void elementwise(is_simd auto&& x, auto&& fn)
+inline void elementwise(any_simd auto&& x, auto&& fn)
 {
   for (int i = 0; i < x.size(); ++i)
   {
@@ -199,7 +199,7 @@ inline const auto& get_element(const auto& x)
  * @return Value of `x[I]`.
  */
 template<int I>
-inline decltype(auto) get_element(const is_simd auto& x)
+inline decltype(auto) get_element(const any_simd auto& x)
 {
   static_assert(I < x.size());
   return x[I];
@@ -245,12 +245,12 @@ concept simd_arithmetic =
   std::is_arithmetic_v<T> && !std::is_same_v<T, bool>;
 
 template<class PotentialSimdType>
-concept is_stdx_simd =
+concept stdx_simd =
   requires(PotentialSimdType x) { []<class T, class Abi>(stdx::simd<T, Abi>&){}(x); };
 
 template<class PotentialSimdType>
-concept is_simd =
-  is_stdx_simd<PotentialSimdType> ||
+concept any_simd =
+  stdx_simd<PotentialSimdType> ||
   requires(PotentialSimdType x) { []<class T, int SimdSize>(universal_simd<T, SimdSize>&){}(x); };
 
 template<class T, int SimdSize>
@@ -452,7 +452,7 @@ struct index_array
 
 template<class PotentialIndexType>
 concept is_index =
-  (is_stdx_simd<PotentialIndexType> && std::is_integral_v<typename PotentialIndexType::value_type>) ||
+  (stdx_simd<PotentialIndexType> && std::is_integral_v<typename PotentialIndexType::value_type>) ||
   requires(PotentialIndexType x) { []<int SimdSize, class IndexType>(index<SimdSize, IndexType>&){}(x); } ||
   requires(PotentialIndexType x) { []<int SimdSize, class ArrayType>(index_array<SimdSize, ArrayType>&){}(x); };
 
@@ -516,12 +516,12 @@ concept simd_arithmetic =
   std::is_arithmetic_v<T> && !std::is_same_v<T, bool>;
 
 template<class PotentialSimdType>
-concept is_stdx_simd =
+concept stdx_simd =
   requires(PotentialSimdType x) { []<class T, class Abi>(stdx::simd<T, Abi>&){}(x); };
 
 template<class PotentialSimdType>
-concept is_simd =
-  is_stdx_simd<PotentialSimdType> ||
+concept any_simd =
+  stdx_simd<PotentialSimdType> ||
   requires(PotentialSimdType x) { []<class T, int SimdSize>(universal_simd<T, SimdSize>&){}(x); };
 
 template<class T, int SimdSize>
@@ -663,12 +663,12 @@ concept simd_arithmetic =
   std::is_arithmetic_v<T> && !std::is_same_v<T, bool>;
 
 template<class PotentialSimdType>
-concept is_stdx_simd =
+concept stdx_simd =
   requires(PotentialSimdType x) { []<class T, class Abi>(stdx::simd<T, Abi>&){}(x); };
 
 template<class PotentialSimdType>
-concept is_simd =
-  is_stdx_simd<PotentialSimdType> ||
+concept any_simd =
+  stdx_simd<PotentialSimdType> ||
   requires(PotentialSimdType x) { []<class T, int SimdSize>(universal_simd<T, SimdSize>&){}(x); };
 
 template<class T, int SimdSize>
@@ -870,7 +870,7 @@ struct index_array
 
 template<class PotentialIndexType>
 concept is_index =
-  (is_stdx_simd<PotentialIndexType> && std::is_integral_v<typename PotentialIndexType::value_type>) ||
+  (stdx_simd<PotentialIndexType> && std::is_integral_v<typename PotentialIndexType::value_type>) ||
   requires(PotentialIndexType x) { []<int SimdSize, class IndexType>(index<SimdSize, IndexType>&){}(x); } ||
   requires(PotentialIndexType x) { []<int SimdSize, class ArrayType>(index_array<SimdSize, ArrayType>&){}(x); };
 
@@ -1076,12 +1076,12 @@ concept simd_arithmetic =
   std::is_arithmetic_v<T> && !std::is_same_v<T, bool>;
 
 template<class PotentialSimdType>
-concept is_stdx_simd =
+concept stdx_simd =
   requires(PotentialSimdType x) { []<class T, class Abi>(stdx::simd<T, Abi>&){}(x); };
 
 template<class PotentialSimdType>
-concept is_simd =
-  is_stdx_simd<PotentialSimdType> ||
+concept any_simd =
+  stdx_simd<PotentialSimdType> ||
   requires(PotentialSimdType x) { []<class T, int SimdSize>(universal_simd<T, SimdSize>&){}(x); };
 
 template<class T, int SimdSize>
@@ -1283,7 +1283,7 @@ struct index_array
 
 template<class PotentialIndexType>
 concept is_index =
-  (is_stdx_simd<PotentialIndexType> && std::is_integral_v<typename PotentialIndexType::value_type>) ||
+  (stdx_simd<PotentialIndexType> && std::is_integral_v<typename PotentialIndexType::value_type>) ||
   requires(PotentialIndexType x) { []<int SimdSize, class IndexType>(index<SimdSize, IndexType>&){}(x); } ||
   requires(PotentialIndexType x) { []<int SimdSize, class ArrayType>(index_array<SimdSize, ArrayType>&){}(x); };
 
@@ -1517,12 +1517,12 @@ concept simd_arithmetic =
   std::is_arithmetic_v<T> && !std::is_same_v<T, bool>;
 
 template<class PotentialSimdType>
-concept is_stdx_simd =
+concept stdx_simd =
   requires(PotentialSimdType x) { []<class T, class Abi>(stdx::simd<T, Abi>&){}(x); };
 
 template<class PotentialSimdType>
-concept is_simd =
-  is_stdx_simd<PotentialSimdType> ||
+concept any_simd =
+  stdx_simd<PotentialSimdType> ||
   requires(PotentialSimdType x) { []<class T, int SimdSize>(universal_simd<T, SimdSize>&){}(x); };
 
 template<class T, int SimdSize>
@@ -1664,12 +1664,12 @@ concept simd_arithmetic =
   std::is_arithmetic_v<T> && !std::is_same_v<T, bool>;
 
 template<class PotentialSimdType>
-concept is_stdx_simd =
+concept stdx_simd =
   requires(PotentialSimdType x) { []<class T, class Abi>(stdx::simd<T, Abi>&){}(x); };
 
 template<class PotentialSimdType>
-concept is_simd =
-  is_stdx_simd<PotentialSimdType> ||
+concept any_simd =
+  stdx_simd<PotentialSimdType> ||
   requires(PotentialSimdType x) { []<class T, int SimdSize>(universal_simd<T, SimdSize>&){}(x); };
 
 template<class T, int SimdSize>
@@ -1871,7 +1871,7 @@ struct index_array
 
 template<class PotentialIndexType>
 concept is_index =
-  (is_stdx_simd<PotentialIndexType> && std::is_integral_v<typename PotentialIndexType::value_type>) ||
+  (stdx_simd<PotentialIndexType> && std::is_integral_v<typename PotentialIndexType::value_type>) ||
   requires(PotentialIndexType x) { []<int SimdSize, class IndexType>(index<SimdSize, IndexType>&){}(x); } ||
   requires(PotentialIndexType x) { []<int SimdSize, class ArrayType>(index_array<SimdSize, ArrayType>&){}(x); };
 
@@ -1912,19 +1912,19 @@ inline void simd_members(DestType& d, const SrcType& s, FN&& func)
   func(d, s);
 }
 
-template<class FN, is_stdx_simd DestType, is_stdx_simd SrcType>
+template<class FN, stdx_simd DestType, stdx_simd SrcType>
 inline void simd_members(DestType& d, const SrcType& s, FN&& func)
 {
   func(d, s);
 }
 
-template<class FN, is_stdx_simd DestType>
+template<class FN, stdx_simd DestType>
 inline void simd_members(DestType& d, const typename DestType::value_type& s, FN&& func)
 {
   func(d, s);
 }
 
-template<class FN, is_stdx_simd SrcType>
+template<class FN, stdx_simd SrcType>
 inline void simd_members(typename SrcType::value_type& d, const SrcType& s, FN&& func)
 {
   func(d, s);
@@ -2114,7 +2114,7 @@ inline void store(const indexed_location<T, SimdSize, IndexArray>& location, con
  * @param dest Reference to the structure-of-simd value, to which `mask` is applied.
  */
 template<class M, class T>
-  requires((!simd_arithmetic<T>) && (!is_stdx_simd<T>))
+  requires((!simd_arithmetic<T>) && (!stdx_simd<T>))
 inline auto where(const M& mask, T& dest)
 {
   return where_expression<M, T>(mask, dest);
@@ -2188,12 +2188,12 @@ concept simd_arithmetic =
   std::is_arithmetic_v<T> && !std::is_same_v<T, bool>;
 
 template<class PotentialSimdType>
-concept is_stdx_simd =
+concept stdx_simd =
   requires(PotentialSimdType x) { []<class T, class Abi>(stdx::simd<T, Abi>&){}(x); };
 
 template<class PotentialSimdType>
-concept is_simd =
-  is_stdx_simd<PotentialSimdType> ||
+concept any_simd =
+  stdx_simd<PotentialSimdType> ||
   requires(PotentialSimdType x) { []<class T, int SimdSize>(universal_simd<T, SimdSize>&){}(x); };
 
 template<class T, int SimdSize>
@@ -2251,12 +2251,12 @@ concept simd_arithmetic =
   std::is_arithmetic_v<T> && !std::is_same_v<T, bool>;
 
 template<class PotentialSimdType>
-concept is_stdx_simd =
+concept stdx_simd =
   requires(PotentialSimdType x) { []<class T, class Abi>(stdx::simd<T, Abi>&){}(x); };
 
 template<class PotentialSimdType>
-concept is_simd =
-  is_stdx_simd<PotentialSimdType> ||
+concept any_simd =
+  stdx_simd<PotentialSimdType> ||
   requires(PotentialSimdType x) { []<class T, int SimdSize>(universal_simd<T, SimdSize>&){}(x); };
 
 template<class T, int SimdSize>
@@ -2458,7 +2458,7 @@ struct index_array
 
 template<class PotentialIndexType>
 concept is_index =
-  (is_stdx_simd<PotentialIndexType> && std::is_integral_v<typename PotentialIndexType::value_type>) ||
+  (stdx_simd<PotentialIndexType> && std::is_integral_v<typename PotentialIndexType::value_type>) ||
   requires(PotentialIndexType x) { []<int SimdSize, class IndexType>(index<SimdSize, IndexType>&){}(x); } ||
   requires(PotentialIndexType x) { []<int SimdSize, class ArrayType>(index_array<SimdSize, ArrayType>&){}(x); };
 
@@ -2531,12 +2531,12 @@ concept simd_arithmetic =
   std::is_arithmetic_v<T> && !std::is_same_v<T, bool>;
 
 template<class PotentialSimdType>
-concept is_stdx_simd =
+concept stdx_simd =
   requires(PotentialSimdType x) { []<class T, class Abi>(stdx::simd<T, Abi>&){}(x); };
 
 template<class PotentialSimdType>
-concept is_simd =
-  is_stdx_simd<PotentialSimdType> ||
+concept any_simd =
+  stdx_simd<PotentialSimdType> ||
   requires(PotentialSimdType x) { []<class T, int SimdSize>(universal_simd<T, SimdSize>&){}(x); };
 
 template<class T, int SimdSize>
@@ -2678,12 +2678,12 @@ concept simd_arithmetic =
   std::is_arithmetic_v<T> && !std::is_same_v<T, bool>;
 
 template<class PotentialSimdType>
-concept is_stdx_simd =
+concept stdx_simd =
   requires(PotentialSimdType x) { []<class T, class Abi>(stdx::simd<T, Abi>&){}(x); };
 
 template<class PotentialSimdType>
-concept is_simd =
-  is_stdx_simd<PotentialSimdType> ||
+concept any_simd =
+  stdx_simd<PotentialSimdType> ||
   requires(PotentialSimdType x) { []<class T, int SimdSize>(universal_simd<T, SimdSize>&){}(x); };
 
 template<class T, int SimdSize>
@@ -2885,7 +2885,7 @@ struct index_array
 
 template<class PotentialIndexType>
 concept is_index =
-  (is_stdx_simd<PotentialIndexType> && std::is_integral_v<typename PotentialIndexType::value_type>) ||
+  (stdx_simd<PotentialIndexType> && std::is_integral_v<typename PotentialIndexType::value_type>) ||
   requires(PotentialIndexType x) { []<int SimdSize, class IndexType>(index<SimdSize, IndexType>&){}(x); } ||
   requires(PotentialIndexType x) { []<int SimdSize, class ArrayType>(index_array<SimdSize, ArrayType>&){}(x); };
 
@@ -2926,19 +2926,19 @@ inline void simd_members(DestType& d, const SrcType& s, FN&& func)
   func(d, s);
 }
 
-template<class FN, is_stdx_simd DestType, is_stdx_simd SrcType>
+template<class FN, stdx_simd DestType, stdx_simd SrcType>
 inline void simd_members(DestType& d, const SrcType& s, FN&& func)
 {
   func(d, s);
 }
 
-template<class FN, is_stdx_simd DestType>
+template<class FN, stdx_simd DestType>
 inline void simd_members(DestType& d, const typename DestType::value_type& s, FN&& func)
 {
   func(d, s);
 }
 
-template<class FN, is_stdx_simd SrcType>
+template<class FN, stdx_simd SrcType>
 inline void simd_members(typename SrcType::value_type& d, const SrcType& s, FN&& func)
 {
   func(d, s);
@@ -3128,7 +3128,7 @@ inline void store(const indexed_location<T, SimdSize, IndexArray>& location, con
  * @param dest Reference to the structure-of-simd value, to which `mask` is applied.
  */
 template<class M, class T>
-  requires((!simd_arithmetic<T>) && (!is_stdx_simd<T>))
+  requires((!simd_arithmetic<T>) && (!stdx_simd<T>))
 inline auto where(const M& mask, T& dest)
 {
   return where_expression<M, T>(mask, dest);
@@ -3200,7 +3200,7 @@ inline decltype(auto) generate_universal(const IndexType& idx, auto&& generator)
 }
 
 template<class T, class Func>
-  requires(!is_simd<T>)
+  requires(!any_simd<T>)
 inline decltype(auto) universal_access(const T& v, Func&& subobject)
 {
   return subobject(v);
@@ -3272,12 +3272,12 @@ concept simd_arithmetic =
   std::is_arithmetic_v<T> && !std::is_same_v<T, bool>;
 
 template<class PotentialSimdType>
-concept is_stdx_simd =
+concept stdx_simd =
   requires(PotentialSimdType x) { []<class T, class Abi>(stdx::simd<T, Abi>&){}(x); };
 
 template<class PotentialSimdType>
-concept is_simd =
-  is_stdx_simd<PotentialSimdType> ||
+concept any_simd =
+  stdx_simd<PotentialSimdType> ||
   requires(PotentialSimdType x) { []<class T, int SimdSize>(universal_simd<T, SimdSize>&){}(x); };
 
 template<class T, int SimdSize>
@@ -3404,12 +3404,12 @@ concept simd_arithmetic =
   std::is_arithmetic_v<T> && !std::is_same_v<T, bool>;
 
 template<class PotentialSimdType>
-concept is_stdx_simd =
+concept stdx_simd =
   requires(PotentialSimdType x) { []<class T, class Abi>(stdx::simd<T, Abi>&){}(x); };
 
 template<class PotentialSimdType>
-concept is_simd =
-  is_stdx_simd<PotentialSimdType> ||
+concept any_simd =
+  stdx_simd<PotentialSimdType> ||
   requires(PotentialSimdType x) { []<class T, int SimdSize>(universal_simd<T, SimdSize>&){}(x); };
 
 template<class T, int SimdSize>
@@ -3551,12 +3551,12 @@ concept simd_arithmetic =
   std::is_arithmetic_v<T> && !std::is_same_v<T, bool>;
 
 template<class PotentialSimdType>
-concept is_stdx_simd =
+concept stdx_simd =
   requires(PotentialSimdType x) { []<class T, class Abi>(stdx::simd<T, Abi>&){}(x); };
 
 template<class PotentialSimdType>
-concept is_simd =
-  is_stdx_simd<PotentialSimdType> ||
+concept any_simd =
+  stdx_simd<PotentialSimdType> ||
   requires(PotentialSimdType x) { []<class T, int SimdSize>(universal_simd<T, SimdSize>&){}(x); };
 
 template<class T, int SimdSize>
@@ -3758,7 +3758,7 @@ struct index_array
 
 template<class PotentialIndexType>
 concept is_index =
-  (is_stdx_simd<PotentialIndexType> && std::is_integral_v<typename PotentialIndexType::value_type>) ||
+  (stdx_simd<PotentialIndexType> && std::is_integral_v<typename PotentialIndexType::value_type>) ||
   requires(PotentialIndexType x) { []<int SimdSize, class IndexType>(index<SimdSize, IndexType>&){}(x); } ||
   requires(PotentialIndexType x) { []<int SimdSize, class ArrayType>(index_array<SimdSize, ArrayType>&){}(x); };
 

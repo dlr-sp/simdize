@@ -118,7 +118,7 @@ inline auto load(const indexed_location<T, SimdSize, ArrayType>& location)
  * @param idx Index.
  * @return A simd value.
  */
-template<simd_arithmetic BaseType, is_simd_index IndexType>
+template<simd_arithmetic BaseType, simd_index IndexType>
 inline auto load_rvalue(auto&& base, const IndexType& idx)
 {
   return stdx::fixed_size_simd<BaseType, IndexType::size()>([&](auto i) { return base[get_index(idx, i)]; });
@@ -134,7 +134,7 @@ inline auto load_rvalue(auto&& base, const IndexType& idx)
  * @param subobject Functor returning the sub-object.
  * @return A simd value.
  */
-template<simd_arithmetic BaseType, is_simd_index IndexType>
+template<simd_arithmetic BaseType, simd_index IndexType>
 inline auto load_rvalue(auto&& base, const IndexType& idx, auto&& subobject)
 {
   return stdx::fixed_size_simd<BaseType, IndexType::size()>([&](auto i)

@@ -108,8 +108,8 @@ struct index_array
 };
 
 template<class PotentialIndexType>
-concept is_simd_index =
-  (is_stdx_simd<PotentialIndexType> && std::is_integral_v<typename PotentialIndexType::value_type>) ||
+concept simd_index =
+  (stdx_simd<PotentialIndexType> && std::is_integral_v<typename PotentialIndexType::value_type>) ||
   requires(std::remove_cvref_t<PotentialIndexType> x) { []<int SimdSize, class IndexType>(index<SimdSize, IndexType>&){}(x); } ||
   requires(std::remove_cvref_t<PotentialIndexType> x) { []<int SimdSize, class ArrayType>(index_array<SimdSize, ArrayType>&){}(x); };
 
@@ -155,6 +155,19 @@ template<std::integral IndexType, class Abi>
 inline auto get_index(const stdx::simd<IndexType, Abi>& idx, auto i)
 {
   return idx[i];
+}
+
+/// Returns true, if the argument is a simd index (i.e. fullfills the concept `simd_index`).
+/**
+ * @tparam IndexType Deduced integral type of the scalar index.
+ * @tparam Abi Deduced abi of the `simd` paramter.
+ * @param idx Indirect simd index.
+ * @param i Vector lane.
+ * @return The scalar index at vector lane `i`, i.e. `idx[i]`.
+ */
+ constexpr inline auto is_simd_index(auto&& idx)
+{
+  return simd_index<decltype(idx)>;
 }
 
 } //namespace simd_access

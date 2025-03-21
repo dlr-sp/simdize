@@ -32,7 +32,7 @@ struct index_operator : Base
    * @param index Simd index.
    * @return A value access object (see \ref value_access) for simd accesses, which can be used as lhs in assignments.
    */
-  auto operator[](const is_simd_index auto& index)
+  auto operator[](const simd_index auto& index)
   {
     return LValueSeparator<true>::to_simd(*this, index);
   }
@@ -42,7 +42,7 @@ struct index_operator : Base
    * @param index Simd index.
    * @return A value access object (see \ref value_access) for simd accesses.
    */
-  auto operator[](const is_simd_index auto& index) const
+  auto operator[](const simd_index auto& index) const
   {
     return LValueSeparator<true>::to_simd(*this, index);
   }

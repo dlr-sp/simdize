@@ -25,16 +25,16 @@ concept simd_arithmetic =
 
 // This works only without non-type template parameters. Hopefully there will be a universal solution (see p2989).
 template<class TestClass, template<typename...> typename ClassTemplate>
-concept is_specialization_of =
+concept specialization_of =
   requires(std::remove_cvref_t<TestClass> x) { []<typename... Args>(ClassTemplate<Args...>&){}(x); };
 
 template<class PotentialSimdType>
-concept is_stdx_simd =
+concept stdx_simd =
   requires(std::remove_cvref_t<PotentialSimdType> x) { []<class T, class Abi>(stdx::simd<T, Abi>&){}(x); };
 
 template<class PotentialSimdType>
-concept is_simd =
-  is_stdx_simd<PotentialSimdType> ||
+concept any_simd =
+  stdx_simd<PotentialSimdType> ||
   requires(std::remove_cvref_t<PotentialSimdType> x) { []<class T, int SimdSize>(universal_simd<T, SimdSize>&){}(x); };
 
 /// Helper class to auto-generate either a `stdx::simd` or - if not applicable - a \ref universal_simd.

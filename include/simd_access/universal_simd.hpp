@@ -91,7 +91,7 @@ inline decltype(auto) generate_universal(const IndexType& idx, auto&& generator)
  * @return The result of `subobject(v)`.
  */
 template<class T, class Func>
-  requires(!is_simd<T>)
+  requires(!any_simd<T>)
 inline decltype(auto) universal_access(T&& v, Func&& subobject)
 {
   return subobject(v);

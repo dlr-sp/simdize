@@ -36,7 +36,7 @@ inline auto simdized_value(const Point<T>& t)
   return Point{simdized_value<SimdSize>(t.x_), simdized_value<SimdSize>(t.x_)};
 }
 
-template<simd_access::is_specialization_of<Point>... Args>
+template<simd_access::specialization_of<Point>... Args>
 inline void simd_members(auto&& func, Args&&... values)
 {
   using simd_access::simd_members;

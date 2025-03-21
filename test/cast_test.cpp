@@ -24,7 +24,7 @@ inline auto simdized_value(const TestStruct<T>& t)
   return TestStruct<decltype(simdized_value<SimdSize>(t.x))>();
 }
 
-template<simd_access::is_specialization_of<TestStruct>... Args>
+template<simd_access::specialization_of<TestStruct>... Args>
 inline void simd_members(auto&& func, Args&&... values)
 {
   using simd_access::simd_members;

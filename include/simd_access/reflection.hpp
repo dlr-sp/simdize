@@ -35,19 +35,19 @@ inline void simd_members(FN&& func, Types&&... values)
   func(values...);
 }
 
-template<class FN, is_stdx_simd... Types>
+template<class FN, stdx_simd... Types>
 inline void simd_members(FN&& func, Types&&... values)
 {
   func(values...);
 }
 
-template<class FN, is_stdx_simd DestType>
+template<class FN, stdx_simd DestType>
 inline void simd_members(FN&& func, DestType& d, const typename DestType::value_type& s)
 {
   func(d, s);
 }
 
-template<class FN, is_stdx_simd SrcType>
+template<class FN, stdx_simd SrcType>
 inline void simd_members(FN&& func, typename SrcType::value_type& d, const SrcType& s)
 {
   func(d, s);
@@ -68,7 +68,7 @@ inline auto simdized_value(const std::vector<T>& v)
 }
 
 
-template<simd_access::is_specialization_of<std::vector>... Args>
+template<simd_access::specialization_of<std::vector>... Args>
 inline void simd_members(auto&& func, Args&&... values)
 {
   auto&& d = std::get<0>(std::forward_as_tuple(std::forward<Args>(values)...));
@@ -84,7 +84,7 @@ inline auto simdized_value(const std::pair<T, U>& v)
   return std::make_pair(simdized_value<SimdSize>(v.first), simdized_value<SimdSize>(v.second));
 }
 
-template<simd_access::is_specialization_of<std::pair>... Args>
+template<simd_access::specialization_of<std::pair>... Args>
 inline void simd_members(auto&& func, Args&&... values)
 {
   simd_members(func, values.first ...);
@@ -126,7 +126,7 @@ inline auto load(const linear_location<T, SimdSize>& location)
  * @param subobject Functor returning the sub-object.
  * @return A simd value.
  */
-template<class BaseType, is_simd_index IndexType>
+template<class BaseType, simd_index IndexType>
   requires (!simd_arithmetic<BaseType>)
 inline auto load_rvalue(auto&& base, const IndexType& idx, auto&& subobject)
 {
@@ -151,7 +151,7 @@ inline auto load_rvalue(auto&& base, const IndexType& idx, auto&& subobject)
  * @param idx Linear index.
  * @return A simd value.
  */
-template<class BaseType, is_simd_index IndexType>
+template<class BaseType, simd_index IndexType>
   requires (!simd_arithmetic<BaseType>)
 inline auto load_rvalue(auto&& base, const IndexType& idx)
 {
@@ -249,7 +249,7 @@ inline void store(const indexed_location<T, SimdSize, IndexArray>& location, con
  * @return A `where_expression` combining `mask`and `dest`.
  */
 template<class M, class T>
-  requires((!simd_arithmetic<T>) && (!is_stdx_simd<T>))
+  requires((!simd_arithmetic<T>) && (!stdx_simd<T>))
 inline auto where(const M& mask, T& dest)
 {
   return where_expression<M, T>(mask, dest);

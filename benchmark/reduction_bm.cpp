@@ -76,7 +76,7 @@ void Reduce_SophisticatedSimd(benchmark::State& state)
     stdx::fixed_size_simd<double, vec_size> intermediateResult(.0);
     simd_access::loop<vec_size>(0, testData.size(), [&](auto i)
     {
-      if constexpr (simd_access::is_simd_index<decltype(i)>)
+      if constexpr (simd_access::is_simd_index(i))
       {
         intermediateResult += SIMD_ACCESS(dataPtr, i);
       }

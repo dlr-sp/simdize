@@ -16,7 +16,7 @@ namespace simd_access
 {
 
 template<class T>
-concept is_simd_accessible = is_simd_index<T> || is_simd<T>;
+concept simd_accessible = simd_index<T> || any_simd<T>;
 
 /// Return a single index of a simd index.
 /**
@@ -24,7 +24,7 @@ concept is_simd_accessible = is_simd_index<T> || is_simd<T>;
  * @param i Index in the simd index.
  * @return The index at the i'th position of `index`.
  */
-inline auto element(const is_simd_index auto& index, int i)
+inline auto element(const simd_index auto& index, int i)
 {
   return get_index(index, i);
 }
@@ -35,7 +35,7 @@ inline auto element(const is_simd_index auto& index, int i)
  * @param i Index in the simd value.
  * @return The scalar value at the i'th position of `value`.
  */
-inline decltype(auto) element(is_simd auto&& value, int i)
+inline decltype(auto) element(any_simd auto&& value, int i)
 {
   return value[i];
 }
@@ -57,7 +57,7 @@ inline auto&& element(auto&& value)
  * @param x Simd value.
  * @param y More simd values.
  */
-inline void elementwise(auto&& fn, is_simd_accessible auto&& x, is_simd_accessible auto&&... y)
+inline void elementwise(auto&& fn, simd_accessible auto&& x, simd_accessible auto&&... y)
 {
   for (int i = 0; i < x.size(); ++i)
   {
@@ -73,7 +73,7 @@ inline void elementwise(auto&& fn, is_simd_accessible auto&& x, is_simd_accessib
  * @param x Simd value.
  * @param y More simd values.
  */
-inline void elementwise_with_index(auto&& fn, is_simd_accessible auto&& x, is_simd_accessible auto&&... y)
+inline void elementwise_with_index(auto&& fn, simd_accessible auto&& x, simd_accessible auto&&... y)
 {
   for (int i = 0; i < x.size(); ++i)
   {
@@ -90,7 +90,7 @@ inline void elementwise_with_index(auto&& fn, is_simd_accessible auto&& x, is_si
  * @param y More values.
  */
 template<class T>
-  requires (!is_simd_accessible<T>)
+  requires (!simd_accessible<T>)
 inline void elementwise(auto&& fn, T&& x, auto&&... y)
 {
   fn(x, y...);
@@ -105,7 +105,7 @@ inline void elementwise(auto&& fn, T&& x, auto&&... y)
  * @param y More values.
  */
 template<class T>
-  requires (!is_simd_accessible<T>)
+  requires (!simd_accessible<T>)
 inline void elementwise_with_index(auto&& fn, T&& x, auto&&... y)
 {
   fn(x, y...);
@@ -156,7 +156,7 @@ inline const auto& get_element(const auto& x)
  * @param x Simd value.
  * @return Value of `x[I]`.
  */
-template<int I, is_simd ValueType>
+template<int I, any_simd ValueType>
 inline decltype(auto) get_element(const ValueType& x)
 {
   static_assert(I < ValueType::size());
