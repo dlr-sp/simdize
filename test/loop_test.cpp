@@ -117,3 +117,50 @@ TEST(Loop, ResidualLoop)
   }
 }
 
+
+TEST(Loop, AligningCopy)
+{
+  TestData src(true), dest(false);
+  constexpr size_t vec_size = stdx::native_simd<double>::size();
+  std::vector<char> simdRecorder(src.size, 0);
+  simd_access::aligning_loop<vec_size>(3, src.size, [](auto i) { return i % 4 == 0; },
+    [&](auto i)
+    {
+      if constexpr (simd_access::is_simd_index(i))
+      {
+        simdRecorder[simd_access::get_index(i, 0)] = 1;
+      }
+      else
+      {
+        simdRecorder[i] = 2;
+      }
+      SIMD_ACCESS(dest.a, i) = SIMD_ACCESS(src.a, i) * 2;
+    });
+
+  for (int i = 0; i < 3; ++i)
+  {
+    EXPECT_EQ(dest.a[i], 0);
+    EXPECT_EQ(simdRecorder[i], 0);
+  }
+  EXPECT_EQ(simdRecorder[3], 2);
+  EXPECT_EQ(dest.a[3], 6);
+  for (int i = 4; i < src.size; ++i)
+  {
+    switch (simdRecorder[i])
+    {
+      case 0:
+        EXPECT_NE(i % 4, 0);
+        break;
+      case 1:
+        EXPECT_EQ(i % 4, 0);
+        break;
+      case 2:
+        EXPECT_LT(src.size - i, vec_size);
+        break;
+      default:
+        EXPECT_EQ(simdRecorder[i], 0);  // deliberately fails and prints simdRecorder[i]
+        break;
+    }
+    EXPECT_EQ(dest.a[i], i * 2);
+  }
+}

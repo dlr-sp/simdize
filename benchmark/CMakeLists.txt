@@ -5,6 +5,7 @@ add_executable(
   universal_bm.cpp
   reduction_bm.cpp
   reflection_bm.cpp
+  aligning_loop_bm.cpp
 )
 target_link_libraries(
   simd_access_benchmark

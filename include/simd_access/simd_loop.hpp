@@ -72,6 +72,59 @@ inline void loop(std::integral auto start, std::integral auto end, auto&& fn,
 }
 
 /**
+ * Linear simd-ized iteration over a function. The function is first called with an integral index until the
+ * `alignTestFn` returns true for a specific index. From there on `alignTestFn` isn't called anymore and the function
+ * is called with a simd index. The remainder loop is called with an integral index again.
+ * @tparam SimdSize Vector size.
+ * @param start Start of the iteration range [start, end).
+ * @param end End of the iteration range [start, end).
+ * @param alignTestFn Generic function to be called. Takes one scalar argument of the common type of `start` and `end`.
+ *   Once it returns true, it isn't called anymore and the function starts to call `fn` with simd indices
+ *   (including the index for which `alignTestFn` returned `true`).
+ * @param fn Generic function to be called. Takes one argument, whose type is either `index<SimdSize, IntegralType>`
+ *   or `IntegralType`.
+ */
+template<int SimdSize, auto ... Args>
+inline void aligning_loop(std::integral auto start, std::integral auto end, auto&& alignTestFn, auto&& fn)
+{
+  using IndexType = std::common_type_t<decltype(start), decltype(end)>;
+  index<SimdSize, IndexType> simd_i{IndexType(start)};
+  for (; simd_i.index_ < end && !alignTestFn(simd_i.index_); ++simd_i.index_)
+  {
+    if constexpr (sizeof...(Args) == 0)
+    {
+      fn(simd_i.index_);
+    }
+    else
+    {
+      fn.template operator()<Args...>(simd_i.index_);
+    }
+  }
+  for (; simd_i.index_ + SimdSize < end + 1; simd_i.index_ += SimdSize)
+  {
+    if constexpr (sizeof...(Args) == 0)
+    {
+      fn(simd_i);
+    }
+    else
+    {
+      fn.template operator()<Args...>(simd_i);
+    }
+  }
+  for (; simd_i.index_ < end; ++simd_i.index_)
+  {
+    if constexpr (sizeof...(Args) == 0)
+    {
+      fn(simd_i.index_);
+    }
+    else
+    {
+      fn.template operator()<Args...>(simd_i.index_);
+    }
+  }
+}
+
+/**
  * Simd-ized iteration over a function using indirect indexing. The function is first called with an index_array
  * and the remainder loop is called with an integral index.
  * @tparam SimdSize Vector size.

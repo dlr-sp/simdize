@@ -12,6 +12,16 @@ void HeatCache(const std::vector<T>& testData)
   };
 }
 
+template<class It>
+void HeatCache(It i, const It& end)
+{
+  for (; i != end; ++i)
+  {
+    auto result = *i;
+    benchmark::DoNotOptimize(result);
+  };
+}
+
 template<class OutputIt, typename SizeType, class Generator>
 constexpr OutputIt GenerateNWithIndex(OutputIt first, SizeType count, Generator g)
 {
