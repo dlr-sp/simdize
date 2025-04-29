@@ -74,8 +74,8 @@ becomes legal C++.
 
 All functions and types of the library reside in the `simd_access` namespace (in short `sa`).
 The library contains these general components:
-1. The `sa::index`, which represents a simd index to a consecutive sequence of elements, and an `sa::index_array`,
-which represents randomly indexed elements in a simd type.
+1. The `sa::index`, which represents a simd index to a consecutive sequence of elements. In addition,
+`stdx::simd` instantiated with an integral data type can be used as simd index to represents randomly indexed elements.
 1. A `SIMD_ACCESS` macro, which can be used to access variables as simd or scalar variables (depending on the index
 type passed to it). The variables can also be stored in an array-of-structure (AOS) layout.
 1. An `sa::loop` function, which iterates over a given range of indices. Residual iterations are handled properly.
@@ -83,7 +83,7 @@ type passed to it). The variables can also be stored in an array-of-structure (A
 1. An outline for a proposal to enable a member access overload (`operator.`).
 
 
-### `sa::index` and `sa::index_array`
+### `sa::index`
 
 The class `sa::index` represents a simd access to a consecutive sequence of elements.
 ```c++
@@ -100,21 +100,6 @@ struct sa::index
 };
 ```
 
-The class `sa::index_array` represents a simd access to randomly indexed elements.
-```c++
-// SimdSize: Length of the simd sequence.
-// ArrayType: Type of the array, which stores the indices. Can also be a pointer into a larger array of indices.
-template<int SimdSize, class ArrayType = std::array<size_t, SimdSize>>
-struct index_array
-{
-  // Return SimdSize.
-  static constexpr size_t size() { return SimdSize; }
-
-  // The index array, index_[n] (with 0<=n<SimdSize) is the index of the n'th element in the simd type.
-  ArrayType index_;
-};
-```
-
 ### The `SIMD_ACCESS` Macro
 
 The `SIMD_ACCESS` can be used to 'simdize' a c++ expression, that represents a memory access.
@@ -125,7 +110,7 @@ std::vector<Point> points;
 ```
 The expression `points[i].x` consists of the base array `points`, the index `i` and a member accessor `.x`.
 These three components must be passed to the `SIMD_ACCESS` macro separately: `SIMD_ACCESS(points, i, .x)`.
-In this way, the memory access becomes simdized, if `i` is an `sa:::index` or an `sa:::index_array`.
+In this way, the memory access becomes simdized, if `i` is `sa:::index` or `stdx:::simd`.
 If it is a read access, then `SIMD_ACCESS(points, i, .x)` yields a simd variable containing the values
 `points[i].x, points[i+1].x, points[i+2].x ...`.
 You can also assign a variable to `SIMD_ACCESS`, in which case the assignment is simdized.
@@ -174,7 +159,7 @@ In addition to consecutive ranges random index ranges are supported.
 // Iterates over a sequence of random indices and calls a generic functor for each iteration.
 // SimdSize: Vector size.
 // [start, end): Range containing the indices.
-// fn: Generic functor to be called. Takes one argument, whose type is either `index_array<SimdSize, IteratorType>`
+// fn: Generic functor to be called. Takes one argument, whose type is either `stdx::simd`
 //   or an integral type for the residual iterations.
 template<int SimdSize, std::random_access_iterator IteratorType>
 void loop(IteratorType start, const IteratorType& end, auto&& fn);
@@ -187,7 +172,7 @@ In that case you can use `loop_with_linear_index`:
 // [start, end): Range containing the indices.
 // fn: Generic functor to be called. Takes two arguments. The first is the linear index starting at 0, its
 //   type is either `index<SimdSize, size_t>` or `size_t`. The second argument is the indirect index, its type is
-//   either `index_array<SimdSize, IteratorType>` or `IntegralType`.
+//   either `stdx::simd<IntegralType, SimdSize>` or `IntegralType`.
 template<int SimdSize, std::random_access_iterator IteratorType>
 void loop_with_linear_index(IteratorType start, const IteratorType& end, auto&& fn)
 ```

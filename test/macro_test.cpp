@@ -130,45 +130,6 @@ TEST(Macro, DirectVectorizedArrayAccess)
   }
 }
 
-
-TEST(Macro, IndirectVectorizedArrayAccess)
-{
-  TestData t;
-  namespace sa = simd_access;
-
-  constexpr size_t vec_size = stdx::native_simd<double>::size();
-  simd_access::index_array<vec_size> index;
-  for (int i = 0; i < vec_size; ++i)
-  {
-    index.index_[i] = vec_size - i + 3;
-  }
-
-  stdx::fixed_size_simd<double, vec_size> x_a = SIMD_ACCESS(t.a, index);
-  stdx::fixed_size_simd<double, vec_size> x_a_arr = SIMD_ACCESS(t.a_subarr, index, [0]);
-  stdx::fixed_size_simd<double, vec_size> x_s_x = SIMD_ACCESS(t.s, index, .x);
-  stdx::fixed_size_simd<double, vec_size> x_s_y = SIMD_ACCESS(t.s, index, .y[0]);
-  stdx::fixed_size_simd<double, vec_size> x_s_rx = SIMD_ACCESS(t.s, index, .GetX());
-  stdx::fixed_size_simd<double, vec_size> x_v = SIMD_ACCESS(t.v, index);
-
-  stdx::fixed_size_simd<double, vec_size> x_sa_a = sa::sa(t.a, index);
-  stdx::fixed_size_simd<double, vec_size> x_sa_arr = sa::sa(t.a_subarr, index)[0];
-  stdx::fixed_size_simd<double, vec_size> x_sa_v = sa::sa(t.v, index);
-
-  for (int i = 0; i < vec_size; ++i)
-  {
-    EXPECT_EQ(x_a[i], vec_size - i + 3);
-    EXPECT_EQ(x_a_arr[i], vec_size - i + 3);
-    EXPECT_EQ(x_s_x[i], vec_size - i + 3);
-    EXPECT_EQ(x_s_y[i], vec_size - i + 3);
-    EXPECT_EQ(x_s_rx[i], vec_size - i + 3);
-    EXPECT_EQ(x_v[i], vec_size - i + 3);
-    EXPECT_EQ(x_sa_a[i], vec_size - i + 3);
-    EXPECT_EQ(x_sa_arr[i], vec_size - i + 3);
-    EXPECT_EQ(x_sa_v[i], vec_size - i + 3);
-  }
-}
-
-
 TEST(Macro, SimdVectorizedArrayAccess)
 {
   TestData t;
@@ -251,19 +212,6 @@ TEST(Macro, RValueTest)
     for (int i = 0; i < vec_size; ++i)
     {
       EXPECT_EQ(x[i], i + 3);
-    }
-  }
-
-  {
-    simd_access::index_array<vec_size> index;
-    for (int i = 0; i < vec_size; ++i)
-    {
-      index.index_[i] = vec_size - i + 3;
-    }
-    stdx::fixed_size_simd<double, vec_size> x = SIMD_ACCESS(test, index);
-    for (int i = 0; i < vec_size; ++i)
-    {
-      EXPECT_EQ(x[i], vec_size - i + 3);
     }
   }
 

@@ -85,19 +85,6 @@ struct LValueSeparator<true>
     return &base_addr[0];
   }
 
-  /// Computes the base address of a given array for an indirect simd access using indices in an array.
-  /**
-   * @tparam SimdSize Deduced simd size (number of vector lanes) of the access.
-   * @tparam ArrayType Deduced type of the array, which stores the indices.
-   * @param base_addr Array base.
-   * @return The address of the first array element.
-   */
-  template<int SimdSize, class ArrayType>
-  static auto get_base_address(auto&& base_addr, const index_array<SimdSize, ArrayType>&)
-  {
-    return &base_addr[0];
-  }
-
   /// Computes the base address of a member of array elements for an linear simd access.
   /**
    * @tparam SimdSize Deduced simd size (number of vector lanes) of the access.
@@ -127,20 +114,6 @@ struct LValueSeparator<true>
     return &subobject(base_addr[0]);
   }
 
-  /// Computes the base address of a member of array elements for an indirect simd access using indices in an array.
-  /**
-   * @tparam SimdSize Deduced simd size (number of vector lanes) of the access.
-   * @tparam ArrayType Deduced type of the array, which stores the indices.
-   * @param base_addr Array base.
-   * @param subobject A functor yielding a member of the array element.
-   * @return The address of the member of the first array element.
-   */
-  template<int SimdSize, class ArrayType>
-  static auto get_base_address(auto&& base_addr, const index_array<SimdSize, ArrayType>&, auto&& subobject)
-  {
-    return &subobject(base_addr[0]);
-  }
-
   /// Creates a value access object for a linear simd access.
   /**
    * @tparam ElementSize Size of an array element.
@@ -154,22 +127,6 @@ struct LValueSeparator<true>
   static auto get_direct_value_access(T* base, const index<SimdSize, IndexType>&)
   {
     return make_value_access<ElementSize>(linear_location<T, SimdSize>{base});
-  }
-
-  /// Creates a value access object for an indirect simd access using indices in an array.
-  /**
-   * @tparam ElementSize Size of an array element.
-   * @tparam T Deduced type of the simd-accessed element.
-   * @tparam SimdSize Deduced simd size (number of vector lanes) of the access.
-   * @tparam ArrayType Deduced type of the array, which stores the indices.
-   * @param base Pointer to the first array element or one of its members.
-   * @param idx SIMD index.
-   * @return A value access object (see \ref value_access), which can be used as lhs in assignments.
-   */
-  template<size_t ElementSize, class T, int SimdSize, class ArrayType>
-  static auto get_direct_value_access(T* base, const index_array<SimdSize, ArrayType>& idx)
-  {
-    return make_value_access<ElementSize>(indexed_location<T, SimdSize, ArrayType>{base, idx.index_});
   }
 
   /// Creates a value access object for an indirect simd access using indices in `stdx::simd`.

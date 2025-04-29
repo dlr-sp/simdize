@@ -126,20 +126,6 @@ TEST(Reflections, RValueAccess)
       EXPECT_EQ(ts.second[i], vec_size - i + 2003);
     }
   }
-
-  {
-    simd_access::index_array<vec_size> index;
-    for (int i = 0; i < vec_size; ++i)
-    {
-      index.index_[i] = vec_size - i + 3;
-    }
-    auto ts = SIMD_ACCESS(src.v, index, .GetPair());
-    for (int i = 0; i < vec_size; ++i)
-    {
-      EXPECT_EQ(ts.first[i], vec_size - i + 3);
-      EXPECT_EQ(ts.second[i], vec_size - i + 2003);
-    }
-  }
 }
 
 TEST(Reflections, OperatorOverload)

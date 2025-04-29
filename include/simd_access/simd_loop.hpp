@@ -9,6 +9,7 @@
 #define SIMD_ACCESS_LOOP
 
 #include <concepts>
+#include <experimental/bits/simd.h>
 #include <type_traits>
 #include "simd_access/index.hpp"
 
@@ -125,7 +126,7 @@ inline void aligning_loop(std::integral auto start, std::integral auto end, auto
 }
 
 /**
- * Simd-ized iteration over a function using indirect indexing. The function is first called with an index_array
+ * Simd-ized iteration over a function using indirect indexing. The function is first called with an stdx::simd
  * and the remainder loop is called with an integral index.
  * @tparam SimdSize Vector size.
  * @tparam Args Optional additional template arguments passed to the function call operator.
@@ -133,7 +134,7 @@ inline void aligning_loop(std::integral auto start, std::integral auto end, auto
  * @param start Inclusive start of the range of indices.
  * @param end Exclusive end of the range of indices.
  * @param fn Generic function to be called. Takes one argument, whose type is either
- *   `index_array<SimdSize, IteratorType>` or `IntegralType`.
+ *   `stdx::simd<IntegralType, SimdSize>` or `IntegralType` (which is `*start`).
  * @param residualLoopPolicy Determines the execution policy of residual iterations. If `ScalarResidualLoop`, residual
  *   iterations are executed one by one. If `VectorResidualLoop`, residual iterations are executed vectorized. In that
  *   case the user is responsible for the handling of indices possbily extending the valid iteration range. Defaults
@@ -144,11 +145,11 @@ template<int SimdSize, auto ... Args, std::random_access_iterator IteratorType,
 inline void loop(IteratorType start, const IteratorType& end, auto&& fn,
   ResidualLoopPolicyType residualLoopPolicy = ScalarResidualLoop)
 {
-  index_array<SimdSize, IteratorType> simd_i{start};
   size_t i = 0, i_end = end - start;
   constexpr auto endOffset = residualLoopPolicy == ScalarResidualLoop ? 1 : SimdSize;
-  for (; i + SimdSize < i_end + endOffset; i += SimdSize, simd_i.index_ += SimdSize)
+  for (; i + SimdSize < i_end + endOffset; i += SimdSize)
   {
+    stdx::fixed_size_simd<std::decay_t<decltype(*start)>, SimdSize> simd_i([&](auto j) { return *(start + i + j); });
     if constexpr (sizeof...(Args) == 0)
     {
       fn(simd_i);
@@ -175,7 +176,7 @@ inline void loop(IteratorType start, const IteratorType& end, auto&& fn,
 }
 
 /**
- * Simd-ized iteration over a function using indirect indexing. The function is first called with an index_array
+ * Simd-ized iteration over a function using indirect indexing. The function is first called with an stdx::simd
  * and the remainder loop is called with an integral index.
  * @tparam SimdSize Vector size.
  * @tparam Args Optional additional template arguments passed to the function call operator.
@@ -184,7 +185,7 @@ inline void loop(IteratorType start, const IteratorType& end, auto&& fn,
  * @param end Exclusive end of the range of indices.
  * @param fn Generic function to be called. Takes two arguments. The first is the linear index starting at 0, its
  *   type is either `index<SimdSize, size_t>` or `size_t`. The second argument is the indirect index, its type is
- *   either `index_array<SimdSize, IteratorType>` or `IntegralType`.
+ *   either `stdx::simd<IntegralType, SimdSize>` or `IntegralType` (which is `*start`).
  * @param residualLoopPolicy Determines the execution policy of residual iterations. If `ScalarResidualLoop`, residual
  *   iterations are executed one by one. If `VectorResidualLoop`, residual iterations are executed vectorized. In that
  *   case the user is responsible for the handling of indices possbily extending the valid iteration range. Defaults
@@ -195,12 +196,13 @@ template<int SimdSize, auto ... Args, std::random_access_iterator IteratorType,
 inline void loop_with_linear_index(IteratorType start, const IteratorType& end, auto&& fn,
   ResidualLoopPolicyType residualLoopPolicy = ScalarResidualLoop)
 {
-  index_array<SimdSize, IteratorType> simd_i{start};
   size_t i_end = end - start;
   constexpr auto endOffset = residualLoopPolicy == ScalarResidualLoop ? 1 : SimdSize;
   index<SimdSize, size_t> i{0};
-  for (; i.index_ + SimdSize < i_end + endOffset; i.index_ += SimdSize, simd_i.index_ += SimdSize)
+  for (; i.index_ + SimdSize < i_end + endOffset; i.index_ += SimdSize)
   {
+    stdx::fixed_size_simd<std::decay_t<decltype(*start)>, SimdSize> simd_i([&](auto j)
+      { return *(start + i.index_ + j); });
     if constexpr (sizeof...(Args) == 0)
     {
       fn(i, simd_i);
