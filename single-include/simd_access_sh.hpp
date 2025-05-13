@@ -404,53 +404,12 @@ struct index
   }
 };
 
-/// Class representing a simd index to indirect indexed elements in an array.
-/**
- * @tparam SimdSize Length of the simd sequence.
- * @tparam ArrayType Type of the array, which stores the indices. Defaults to std::array<size_t, SimdSize>, but could
- *   be stdx::fixed_size_simd<size_t, SimdSize>. Also size_t can be exchanged for another integral type.
- *   It is also possible to specify e.g. `int*` and thus use a pointer to a location in a larger array.
- */
-template<int SimdSize, class ArrayType = std::array<size_t, SimdSize>>
-struct index_array
-{
-  /// Return the length of the simd sequence.
-  /**
-   * @return The length of the simd sequence.
-   */
-  static constexpr int size() { return SimdSize; }
-
-  /// Return the scalar index of a vector lane.
-  /**
-   * @param i Index in the vector must be in the range [0, SimdSize) .
-   * @return The scalar index at vector lane i, i.e. index_[i].
-   */
-  auto scalar_index(int i) const { return index_[i]; }
-
-  /// The index array, the n'th entry defines the index of the n'th element in the simd type.
-  ArrayType index_;
-
-  /// A reverse overloaded operator[] for simdized array accesses, since global operator[] is not allowed (yet).
-  /**
-   * @tparam T Data type of the elements in the array.
-   * @param data Pointer to the array.
-   * @return A value_access representing a simd access expression to indirect indexed elements in an array.
-   */
-  template<class T>
-  auto operator[](T* data) const
-  {
-    return value_access<indexed_location<T, SimdSize, ArrayType>, sizeof(T)>
-      (indexed_location<T, SimdSize, ArrayType>{data, index_});
-  }
-};
-
 template<class PotentialIndexType>
 concept simd_index =
   (stdx_simd<PotentialIndexType> && std::is_integral_v<typename PotentialIndexType::value_type>) ||
-  requires(std::remove_cvref_t<PotentialIndexType> x) { []<int SimdSize, class IndexType>(index<SimdSize, IndexType>&){}(x); } ||
-  requires(std::remove_cvref_t<PotentialIndexType> x) { []<int SimdSize, class ArrayType>(index_array<SimdSize, ArrayType>&){}(x); };
+  requires(std::remove_cvref_t<PotentialIndexType> x) { []<int SimdSize, class IndexType>(index<SimdSize, IndexType>&){}(x); };
 
-/// TODO: Introduce masked_index and masked_index_array to support e.g. residual masked loops.
+/// TODO: Introduce masked_index to support e.g. residual masked loops.
 
 /// Returns the scalar index of a specific vector lane for a linear index.
 /**
@@ -461,21 +420,7 @@ concept simd_index =
  * @return The scalar index at vector lane `i`, i.e. `idx.start + i`.
  */
 template<int SimdSize, class IndexType>
-inline auto get_index(const index<SimdSize, IndexType>& idx, auto i)
-{
-  return idx.scalar_index(i);
-}
-
-/// Returns the scalar index of a specific vector lane for an indirect index.
-/**
- * @tparam SimdSize Deduced simd size.
- * @tparam ArrayType Type of the array, which stores the indices.
- * @param idx Indirect simd index.
- * @param i Vector lane.
- * @return The scalar index at vector lane `i`, i.e. `idx.indices[i]`.
- */
-template<int SimdSize, class ArrayType>
-inline auto get_index(const index_array<SimdSize, ArrayType>& idx, auto i)
+inline auto scalar_index(const index<SimdSize, IndexType>& idx, auto i)
 {
   return idx.scalar_index(i);
 }
@@ -489,7 +434,7 @@ inline auto get_index(const index_array<SimdSize, ArrayType>& idx, auto i)
  * @return The scalar index at vector lane `i`, i.e. `idx[i]`.
  */
 template<std::integral IndexType, class Abi>
-inline auto get_index(const stdx::simd<IndexType, Abi>& idx, auto i)
+inline auto scalar_index(const stdx::simd<IndexType, Abi>& idx, auto i)
 {
   return idx[i];
 }
@@ -934,53 +879,12 @@ struct index
   }
 };
 
-/// Class representing a simd index to indirect indexed elements in an array.
-/**
- * @tparam SimdSize Length of the simd sequence.
- * @tparam ArrayType Type of the array, which stores the indices. Defaults to std::array<size_t, SimdSize>, but could
- *   be stdx::fixed_size_simd<size_t, SimdSize>. Also size_t can be exchanged for another integral type.
- *   It is also possible to specify e.g. `int*` and thus use a pointer to a location in a larger array.
- */
-template<int SimdSize, class ArrayType = std::array<size_t, SimdSize>>
-struct index_array
-{
-  /// Return the length of the simd sequence.
-  /**
-   * @return The length of the simd sequence.
-   */
-  static constexpr int size() { return SimdSize; }
-
-  /// Return the scalar index of a vector lane.
-  /**
-   * @param i Index in the vector must be in the range [0, SimdSize) .
-   * @return The scalar index at vector lane i, i.e. index_[i].
-   */
-  auto scalar_index(int i) const { return index_[i]; }
-
-  /// The index array, the n'th entry defines the index of the n'th element in the simd type.
-  ArrayType index_;
-
-  /// A reverse overloaded operator[] for simdized array accesses, since global operator[] is not allowed (yet).
-  /**
-   * @tparam T Data type of the elements in the array.
-   * @param data Pointer to the array.
-   * @return A value_access representing a simd access expression to indirect indexed elements in an array.
-   */
-  template<class T>
-  auto operator[](T* data) const
-  {
-    return value_access<indexed_location<T, SimdSize, ArrayType>, sizeof(T)>
-      (indexed_location<T, SimdSize, ArrayType>{data, index_});
-  }
-};
-
 template<class PotentialIndexType>
 concept simd_index =
   (stdx_simd<PotentialIndexType> && std::is_integral_v<typename PotentialIndexType::value_type>) ||
-  requires(std::remove_cvref_t<PotentialIndexType> x) { []<int SimdSize, class IndexType>(index<SimdSize, IndexType>&){}(x); } ||
-  requires(std::remove_cvref_t<PotentialIndexType> x) { []<int SimdSize, class ArrayType>(index_array<SimdSize, ArrayType>&){}(x); };
+  requires(std::remove_cvref_t<PotentialIndexType> x) { []<int SimdSize, class IndexType>(index<SimdSize, IndexType>&){}(x); };
 
-/// TODO: Introduce masked_index and masked_index_array to support e.g. residual masked loops.
+/// TODO: Introduce masked_index to support e.g. residual masked loops.
 
 /// Returns the scalar index of a specific vector lane for a linear index.
 /**
@@ -991,21 +895,7 @@ concept simd_index =
  * @return The scalar index at vector lane `i`, i.e. `idx.start + i`.
  */
 template<int SimdSize, class IndexType>
-inline auto get_index(const index<SimdSize, IndexType>& idx, auto i)
-{
-  return idx.scalar_index(i);
-}
-
-/// Returns the scalar index of a specific vector lane for an indirect index.
-/**
- * @tparam SimdSize Deduced simd size.
- * @tparam ArrayType Type of the array, which stores the indices.
- * @param idx Indirect simd index.
- * @param i Vector lane.
- * @return The scalar index at vector lane `i`, i.e. `idx.indices[i]`.
- */
-template<int SimdSize, class ArrayType>
-inline auto get_index(const index_array<SimdSize, ArrayType>& idx, auto i)
+inline auto scalar_index(const index<SimdSize, IndexType>& idx, auto i)
 {
   return idx.scalar_index(i);
 }
@@ -1019,7 +909,7 @@ inline auto get_index(const index_array<SimdSize, ArrayType>& idx, auto i)
  * @return The scalar index at vector lane `i`, i.e. `idx[i]`.
  */
 template<std::integral IndexType, class Abi>
-inline auto get_index(const stdx::simd<IndexType, Abi>& idx, auto i)
+inline auto scalar_index(const stdx::simd<IndexType, Abi>& idx, auto i)
 {
   return idx[i];
 }
@@ -1155,7 +1045,7 @@ inline auto load_rvalue(auto&& base, const IndexType& idx, auto&& subobject)
       {
         dest[i] = src;
       },
-      result, subobject(base[get_index(idx, i)]));
+      result, subobject(base[scalar_index(idx, i)]));
   }
   return result;
 }
@@ -1180,7 +1070,7 @@ inline auto load_rvalue(auto&& base, const IndexType& idx)
       {
         dest[i] = src;
       },
-      result, base[get_index(idx, i)]);
+      result, base[scalar_index(idx, i)]);
   }
   return result;
 }
@@ -1703,53 +1593,12 @@ struct index
   }
 };
 
-/// Class representing a simd index to indirect indexed elements in an array.
-/**
- * @tparam SimdSize Length of the simd sequence.
- * @tparam ArrayType Type of the array, which stores the indices. Defaults to std::array<size_t, SimdSize>, but could
- *   be stdx::fixed_size_simd<size_t, SimdSize>. Also size_t can be exchanged for another integral type.
- *   It is also possible to specify e.g. `int*` and thus use a pointer to a location in a larger array.
- */
-template<int SimdSize, class ArrayType = std::array<size_t, SimdSize>>
-struct index_array
-{
-  /// Return the length of the simd sequence.
-  /**
-   * @return The length of the simd sequence.
-   */
-  static constexpr int size() { return SimdSize; }
-
-  /// Return the scalar index of a vector lane.
-  /**
-   * @param i Index in the vector must be in the range [0, SimdSize) .
-   * @return The scalar index at vector lane i, i.e. index_[i].
-   */
-  auto scalar_index(int i) const { return index_[i]; }
-
-  /// The index array, the n'th entry defines the index of the n'th element in the simd type.
-  ArrayType index_;
-
-  /// A reverse overloaded operator[] for simdized array accesses, since global operator[] is not allowed (yet).
-  /**
-   * @tparam T Data type of the elements in the array.
-   * @param data Pointer to the array.
-   * @return A value_access representing a simd access expression to indirect indexed elements in an array.
-   */
-  template<class T>
-  auto operator[](T* data) const
-  {
-    return value_access<indexed_location<T, SimdSize, ArrayType>, sizeof(T)>
-      (indexed_location<T, SimdSize, ArrayType>{data, index_});
-  }
-};
-
 template<class PotentialIndexType>
 concept simd_index =
   (stdx_simd<PotentialIndexType> && std::is_integral_v<typename PotentialIndexType::value_type>) ||
-  requires(std::remove_cvref_t<PotentialIndexType> x) { []<int SimdSize, class IndexType>(index<SimdSize, IndexType>&){}(x); } ||
-  requires(std::remove_cvref_t<PotentialIndexType> x) { []<int SimdSize, class ArrayType>(index_array<SimdSize, ArrayType>&){}(x); };
+  requires(std::remove_cvref_t<PotentialIndexType> x) { []<int SimdSize, class IndexType>(index<SimdSize, IndexType>&){}(x); };
 
-/// TODO: Introduce masked_index and masked_index_array to support e.g. residual masked loops.
+/// TODO: Introduce masked_index to support e.g. residual masked loops.
 
 /// Returns the scalar index of a specific vector lane for a linear index.
 /**
@@ -1760,21 +1609,7 @@ concept simd_index =
  * @return The scalar index at vector lane `i`, i.e. `idx.start + i`.
  */
 template<int SimdSize, class IndexType>
-inline auto get_index(const index<SimdSize, IndexType>& idx, auto i)
-{
-  return idx.scalar_index(i);
-}
-
-/// Returns the scalar index of a specific vector lane for an indirect index.
-/**
- * @tparam SimdSize Deduced simd size.
- * @tparam ArrayType Type of the array, which stores the indices.
- * @param idx Indirect simd index.
- * @param i Vector lane.
- * @return The scalar index at vector lane `i`, i.e. `idx.indices[i]`.
- */
-template<int SimdSize, class ArrayType>
-inline auto get_index(const index_array<SimdSize, ArrayType>& idx, auto i)
+inline auto scalar_index(const index<SimdSize, IndexType>& idx, auto i)
 {
   return idx.scalar_index(i);
 }
@@ -1788,7 +1623,7 @@ inline auto get_index(const index_array<SimdSize, ArrayType>& idx, auto i)
  * @return The scalar index at vector lane `i`, i.e. `idx[i]`.
  */
 template<std::integral IndexType, class Abi>
-inline auto get_index(const stdx::simd<IndexType, Abi>& idx, auto i)
+inline auto scalar_index(const stdx::simd<IndexType, Abi>& idx, auto i)
 {
   return idx[i];
 }
@@ -1826,7 +1661,7 @@ concept simd_accessible = simd_index<T> || any_simd<T>;
  */
 inline auto element(const simd_index auto& index, int i)
 {
-  return get_index(index, i);
+  return scalar_index(index, i);
 }
 
 /// Return a single value of a simd value.
@@ -2201,53 +2036,12 @@ struct index
   }
 };
 
-/// Class representing a simd index to indirect indexed elements in an array.
-/**
- * @tparam SimdSize Length of the simd sequence.
- * @tparam ArrayType Type of the array, which stores the indices. Defaults to std::array<size_t, SimdSize>, but could
- *   be stdx::fixed_size_simd<size_t, SimdSize>. Also size_t can be exchanged for another integral type.
- *   It is also possible to specify e.g. `int*` and thus use a pointer to a location in a larger array.
- */
-template<int SimdSize, class ArrayType = std::array<size_t, SimdSize>>
-struct index_array
-{
-  /// Return the length of the simd sequence.
-  /**
-   * @return The length of the simd sequence.
-   */
-  static constexpr int size() { return SimdSize; }
-
-  /// Return the scalar index of a vector lane.
-  /**
-   * @param i Index in the vector must be in the range [0, SimdSize) .
-   * @return The scalar index at vector lane i, i.e. index_[i].
-   */
-  auto scalar_index(int i) const { return index_[i]; }
-
-  /// The index array, the n'th entry defines the index of the n'th element in the simd type.
-  ArrayType index_;
-
-  /// A reverse overloaded operator[] for simdized array accesses, since global operator[] is not allowed (yet).
-  /**
-   * @tparam T Data type of the elements in the array.
-   * @param data Pointer to the array.
-   * @return A value_access representing a simd access expression to indirect indexed elements in an array.
-   */
-  template<class T>
-  auto operator[](T* data) const
-  {
-    return value_access<indexed_location<T, SimdSize, ArrayType>, sizeof(T)>
-      (indexed_location<T, SimdSize, ArrayType>{data, index_});
-  }
-};
-
 template<class PotentialIndexType>
 concept simd_index =
   (stdx_simd<PotentialIndexType> && std::is_integral_v<typename PotentialIndexType::value_type>) ||
-  requires(std::remove_cvref_t<PotentialIndexType> x) { []<int SimdSize, class IndexType>(index<SimdSize, IndexType>&){}(x); } ||
-  requires(std::remove_cvref_t<PotentialIndexType> x) { []<int SimdSize, class ArrayType>(index_array<SimdSize, ArrayType>&){}(x); };
+  requires(std::remove_cvref_t<PotentialIndexType> x) { []<int SimdSize, class IndexType>(index<SimdSize, IndexType>&){}(x); };
 
-/// TODO: Introduce masked_index and masked_index_array to support e.g. residual masked loops.
+/// TODO: Introduce masked_index to support e.g. residual masked loops.
 
 /// Returns the scalar index of a specific vector lane for a linear index.
 /**
@@ -2258,21 +2052,7 @@ concept simd_index =
  * @return The scalar index at vector lane `i`, i.e. `idx.start + i`.
  */
 template<int SimdSize, class IndexType>
-inline auto get_index(const index<SimdSize, IndexType>& idx, auto i)
-{
-  return idx.scalar_index(i);
-}
-
-/// Returns the scalar index of a specific vector lane for an indirect index.
-/**
- * @tparam SimdSize Deduced simd size.
- * @tparam ArrayType Type of the array, which stores the indices.
- * @param idx Indirect simd index.
- * @param i Vector lane.
- * @return The scalar index at vector lane `i`, i.e. `idx.indices[i]`.
- */
-template<int SimdSize, class ArrayType>
-inline auto get_index(const index_array<SimdSize, ArrayType>& idx, auto i)
+inline auto scalar_index(const index<SimdSize, IndexType>& idx, auto i)
 {
   return idx.scalar_index(i);
 }
@@ -2286,7 +2066,7 @@ inline auto get_index(const index_array<SimdSize, ArrayType>& idx, auto i)
  * @return The scalar index at vector lane `i`, i.e. `idx[i]`.
  */
 template<std::integral IndexType, class Abi>
-inline auto get_index(const stdx::simd<IndexType, Abi>& idx, auto i)
+inline auto scalar_index(const stdx::simd<IndexType, Abi>& idx, auto i)
 {
   return idx[i];
 }
@@ -2721,53 +2501,12 @@ struct index
   }
 };
 
-/// Class representing a simd index to indirect indexed elements in an array.
-/**
- * @tparam SimdSize Length of the simd sequence.
- * @tparam ArrayType Type of the array, which stores the indices. Defaults to std::array<size_t, SimdSize>, but could
- *   be stdx::fixed_size_simd<size_t, SimdSize>. Also size_t can be exchanged for another integral type.
- *   It is also possible to specify e.g. `int*` and thus use a pointer to a location in a larger array.
- */
-template<int SimdSize, class ArrayType = std::array<size_t, SimdSize>>
-struct index_array
-{
-  /// Return the length of the simd sequence.
-  /**
-   * @return The length of the simd sequence.
-   */
-  static constexpr int size() { return SimdSize; }
-
-  /// Return the scalar index of a vector lane.
-  /**
-   * @param i Index in the vector must be in the range [0, SimdSize) .
-   * @return The scalar index at vector lane i, i.e. index_[i].
-   */
-  auto scalar_index(int i) const { return index_[i]; }
-
-  /// The index array, the n'th entry defines the index of the n'th element in the simd type.
-  ArrayType index_;
-
-  /// A reverse overloaded operator[] for simdized array accesses, since global operator[] is not allowed (yet).
-  /**
-   * @tparam T Data type of the elements in the array.
-   * @param data Pointer to the array.
-   * @return A value_access representing a simd access expression to indirect indexed elements in an array.
-   */
-  template<class T>
-  auto operator[](T* data) const
-  {
-    return value_access<indexed_location<T, SimdSize, ArrayType>, sizeof(T)>
-      (indexed_location<T, SimdSize, ArrayType>{data, index_});
-  }
-};
-
 template<class PotentialIndexType>
 concept simd_index =
   (stdx_simd<PotentialIndexType> && std::is_integral_v<typename PotentialIndexType::value_type>) ||
-  requires(std::remove_cvref_t<PotentialIndexType> x) { []<int SimdSize, class IndexType>(index<SimdSize, IndexType>&){}(x); } ||
-  requires(std::remove_cvref_t<PotentialIndexType> x) { []<int SimdSize, class ArrayType>(index_array<SimdSize, ArrayType>&){}(x); };
+  requires(std::remove_cvref_t<PotentialIndexType> x) { []<int SimdSize, class IndexType>(index<SimdSize, IndexType>&){}(x); };
 
-/// TODO: Introduce masked_index and masked_index_array to support e.g. residual masked loops.
+/// TODO: Introduce masked_index to support e.g. residual masked loops.
 
 /// Returns the scalar index of a specific vector lane for a linear index.
 /**
@@ -2778,21 +2517,7 @@ concept simd_index =
  * @return The scalar index at vector lane `i`, i.e. `idx.start + i`.
  */
 template<int SimdSize, class IndexType>
-inline auto get_index(const index<SimdSize, IndexType>& idx, auto i)
-{
-  return idx.scalar_index(i);
-}
-
-/// Returns the scalar index of a specific vector lane for an indirect index.
-/**
- * @tparam SimdSize Deduced simd size.
- * @tparam ArrayType Type of the array, which stores the indices.
- * @param idx Indirect simd index.
- * @param i Vector lane.
- * @return The scalar index at vector lane `i`, i.e. `idx.indices[i]`.
- */
-template<int SimdSize, class ArrayType>
-inline auto get_index(const index_array<SimdSize, ArrayType>& idx, auto i)
+inline auto scalar_index(const index<SimdSize, IndexType>& idx, auto i)
 {
   return idx.scalar_index(i);
 }
@@ -2806,7 +2531,7 @@ inline auto get_index(const index_array<SimdSize, ArrayType>& idx, auto i)
  * @return The scalar index at vector lane `i`, i.e. `idx[i]`.
  */
 template<std::integral IndexType, class Abi>
-inline auto get_index(const stdx::simd<IndexType, Abi>& idx, auto i)
+inline auto scalar_index(const stdx::simd<IndexType, Abi>& idx, auto i)
 {
   return idx[i];
 }
@@ -2937,7 +2662,7 @@ inline auto load(const indexed_location<T, SimdSize, ArrayType>& location)
 template<simd_arithmetic BaseType, simd_index IndexType>
 inline auto load_rvalue(auto&& base, const IndexType& idx)
 {
-  return stdx::fixed_size_simd<BaseType, IndexType::size()>([&](auto i) { return base[get_index(idx, i)]; });
+  return stdx::fixed_size_simd<BaseType, IndexType::size()>([&](auto i) { return base[scalar_index(idx, i)]; });
 }
 
 /**
@@ -2955,7 +2680,7 @@ inline auto load_rvalue(auto&& base, const IndexType& idx, auto&& subobject)
 {
   return stdx::fixed_size_simd<BaseType, IndexType::size()>([&](auto i)
   {
-    return subobject(base[get_index(idx, i)]);
+    return subobject(base[scalar_index(idx, i)]);
   });
 }
 
@@ -2974,6 +2699,7 @@ inline auto load_rvalue(auto&& base, const IndexType& idx, auto&& subobject)
 #define SIMD_ACCESS_LOOP
 
 #include <concepts>
+#include <experimental/bits/simd.h>
 #include <type_traits>
 // See the file "LICENSE" for the full license governing this code.
 
@@ -3209,53 +2935,12 @@ struct index
   }
 };
 
-/// Class representing a simd index to indirect indexed elements in an array.
-/**
- * @tparam SimdSize Length of the simd sequence.
- * @tparam ArrayType Type of the array, which stores the indices. Defaults to std::array<size_t, SimdSize>, but could
- *   be stdx::fixed_size_simd<size_t, SimdSize>. Also size_t can be exchanged for another integral type.
- *   It is also possible to specify e.g. `int*` and thus use a pointer to a location in a larger array.
- */
-template<int SimdSize, class ArrayType = std::array<size_t, SimdSize>>
-struct index_array
-{
-  /// Return the length of the simd sequence.
-  /**
-   * @return The length of the simd sequence.
-   */
-  static constexpr int size() { return SimdSize; }
-
-  /// Return the scalar index of a vector lane.
-  /**
-   * @param i Index in the vector must be in the range [0, SimdSize) .
-   * @return The scalar index at vector lane i, i.e. index_[i].
-   */
-  auto scalar_index(int i) const { return index_[i]; }
-
-  /// The index array, the n'th entry defines the index of the n'th element in the simd type.
-  ArrayType index_;
-
-  /// A reverse overloaded operator[] for simdized array accesses, since global operator[] is not allowed (yet).
-  /**
-   * @tparam T Data type of the elements in the array.
-   * @param data Pointer to the array.
-   * @return A value_access representing a simd access expression to indirect indexed elements in an array.
-   */
-  template<class T>
-  auto operator[](T* data) const
-  {
-    return value_access<indexed_location<T, SimdSize, ArrayType>, sizeof(T)>
-      (indexed_location<T, SimdSize, ArrayType>{data, index_});
-  }
-};
-
 template<class PotentialIndexType>
 concept simd_index =
   (stdx_simd<PotentialIndexType> && std::is_integral_v<typename PotentialIndexType::value_type>) ||
-  requires(std::remove_cvref_t<PotentialIndexType> x) { []<int SimdSize, class IndexType>(index<SimdSize, IndexType>&){}(x); } ||
-  requires(std::remove_cvref_t<PotentialIndexType> x) { []<int SimdSize, class ArrayType>(index_array<SimdSize, ArrayType>&){}(x); };
+  requires(std::remove_cvref_t<PotentialIndexType> x) { []<int SimdSize, class IndexType>(index<SimdSize, IndexType>&){}(x); };
 
-/// TODO: Introduce masked_index and masked_index_array to support e.g. residual masked loops.
+/// TODO: Introduce masked_index to support e.g. residual masked loops.
 
 /// Returns the scalar index of a specific vector lane for a linear index.
 /**
@@ -3266,21 +2951,7 @@ concept simd_index =
  * @return The scalar index at vector lane `i`, i.e. `idx.start + i`.
  */
 template<int SimdSize, class IndexType>
-inline auto get_index(const index<SimdSize, IndexType>& idx, auto i)
-{
-  return idx.scalar_index(i);
-}
-
-/// Returns the scalar index of a specific vector lane for an indirect index.
-/**
- * @tparam SimdSize Deduced simd size.
- * @tparam ArrayType Type of the array, which stores the indices.
- * @param idx Indirect simd index.
- * @param i Vector lane.
- * @return The scalar index at vector lane `i`, i.e. `idx.indices[i]`.
- */
-template<int SimdSize, class ArrayType>
-inline auto get_index(const index_array<SimdSize, ArrayType>& idx, auto i)
+inline auto scalar_index(const index<SimdSize, IndexType>& idx, auto i)
 {
   return idx.scalar_index(i);
 }
@@ -3294,7 +2965,7 @@ inline auto get_index(const index_array<SimdSize, ArrayType>& idx, auto i)
  * @return The scalar index at vector lane `i`, i.e. `idx[i]`.
  */
 template<std::integral IndexType, class Abi>
-inline auto get_index(const stdx::simd<IndexType, Abi>& idx, auto i)
+inline auto scalar_index(const stdx::simd<IndexType, Abi>& idx, auto i)
 {
   return idx[i];
 }
@@ -3429,7 +3100,7 @@ inline void aligning_loop(std::integral auto start, std::integral auto end, auto
 }
 
 /**
- * Simd-ized iteration over a function using indirect indexing. The function is first called with an index_array
+ * Simd-ized iteration over a function using indirect indexing. The function is first called with an stdx::simd
  * and the remainder loop is called with an integral index.
  * @tparam SimdSize Vector size.
  * @tparam Args Optional additional template arguments passed to the function call operator.
@@ -3437,7 +3108,7 @@ inline void aligning_loop(std::integral auto start, std::integral auto end, auto
  * @param start Inclusive start of the range of indices.
  * @param end Exclusive end of the range of indices.
  * @param fn Generic function to be called. Takes one argument, whose type is either
- *   `index_array<SimdSize, IteratorType>` or `IntegralType`.
+ *   `stdx::simd<IntegralType, SimdSize>` or `IntegralType` (which is `*start`).
  * @param residualLoopPolicy Determines the execution policy of residual iterations. If `ScalarResidualLoop`, residual
  *   iterations are executed one by one. If `VectorResidualLoop`, residual iterations are executed vectorized. In that
  *   case the user is responsible for the handling of indices possbily extending the valid iteration range. Defaults
@@ -3448,11 +3119,11 @@ template<int SimdSize, auto ... Args, std::random_access_iterator IteratorType,
 inline void loop(IteratorType start, const IteratorType& end, auto&& fn,
   ResidualLoopPolicyType residualLoopPolicy = ScalarResidualLoop)
 {
-  index_array<SimdSize, IteratorType> simd_i{start};
   size_t i = 0, i_end = end - start;
   constexpr auto endOffset = residualLoopPolicy == ScalarResidualLoop ? 1 : SimdSize;
-  for (; i + SimdSize < i_end + endOffset; i += SimdSize, simd_i.index_ += SimdSize)
+  for (; i + SimdSize < i_end + endOffset; i += SimdSize)
   {
+    stdx::fixed_size_simd<std::decay_t<decltype(*start)>, SimdSize> simd_i([&](auto j) { return *(start + i + j); });
     if constexpr (sizeof...(Args) == 0)
     {
       fn(simd_i);
@@ -3479,7 +3150,7 @@ inline void loop(IteratorType start, const IteratorType& end, auto&& fn,
 }
 
 /**
- * Simd-ized iteration over a function using indirect indexing. The function is first called with an index_array
+ * Simd-ized iteration over a function using indirect indexing. The function is first called with an stdx::simd
  * and the remainder loop is called with an integral index.
  * @tparam SimdSize Vector size.
  * @tparam Args Optional additional template arguments passed to the function call operator.
@@ -3488,7 +3159,7 @@ inline void loop(IteratorType start, const IteratorType& end, auto&& fn,
  * @param end Exclusive end of the range of indices.
  * @param fn Generic function to be called. Takes two arguments. The first is the linear index starting at 0, its
  *   type is either `index<SimdSize, size_t>` or `size_t`. The second argument is the indirect index, its type is
- *   either `index_array<SimdSize, IteratorType>` or `IntegralType`.
+ *   either `stdx::simd<IntegralType, SimdSize>` or `IntegralType` (which is `*start`).
  * @param residualLoopPolicy Determines the execution policy of residual iterations. If `ScalarResidualLoop`, residual
  *   iterations are executed one by one. If `VectorResidualLoop`, residual iterations are executed vectorized. In that
  *   case the user is responsible for the handling of indices possbily extending the valid iteration range. Defaults
@@ -3499,12 +3170,13 @@ template<int SimdSize, auto ... Args, std::random_access_iterator IteratorType,
 inline void loop_with_linear_index(IteratorType start, const IteratorType& end, auto&& fn,
   ResidualLoopPolicyType residualLoopPolicy = ScalarResidualLoop)
 {
-  index_array<SimdSize, IteratorType> simd_i{start};
   size_t i_end = end - start;
   constexpr auto endOffset = residualLoopPolicy == ScalarResidualLoop ? 1 : SimdSize;
   index<SimdSize, size_t> i{0};
-  for (; i.index_ + SimdSize < i_end + endOffset; i.index_ += SimdSize, simd_i.index_ += SimdSize)
+  for (; i.index_ + SimdSize < i_end + endOffset; i.index_ += SimdSize)
   {
+    stdx::fixed_size_simd<std::decay_t<decltype(*start)>, SimdSize> simd_i([&](auto j)
+      { return *(start + i.index_ + j); });
     if constexpr (sizeof...(Args) == 0)
     {
       fn(i, simd_i);
@@ -3957,53 +3629,12 @@ struct index
   }
 };
 
-/// Class representing a simd index to indirect indexed elements in an array.
-/**
- * @tparam SimdSize Length of the simd sequence.
- * @tparam ArrayType Type of the array, which stores the indices. Defaults to std::array<size_t, SimdSize>, but could
- *   be stdx::fixed_size_simd<size_t, SimdSize>. Also size_t can be exchanged for another integral type.
- *   It is also possible to specify e.g. `int*` and thus use a pointer to a location in a larger array.
- */
-template<int SimdSize, class ArrayType = std::array<size_t, SimdSize>>
-struct index_array
-{
-  /// Return the length of the simd sequence.
-  /**
-   * @return The length of the simd sequence.
-   */
-  static constexpr int size() { return SimdSize; }
-
-  /// Return the scalar index of a vector lane.
-  /**
-   * @param i Index in the vector must be in the range [0, SimdSize) .
-   * @return The scalar index at vector lane i, i.e. index_[i].
-   */
-  auto scalar_index(int i) const { return index_[i]; }
-
-  /// The index array, the n'th entry defines the index of the n'th element in the simd type.
-  ArrayType index_;
-
-  /// A reverse overloaded operator[] for simdized array accesses, since global operator[] is not allowed (yet).
-  /**
-   * @tparam T Data type of the elements in the array.
-   * @param data Pointer to the array.
-   * @return A value_access representing a simd access expression to indirect indexed elements in an array.
-   */
-  template<class T>
-  auto operator[](T* data) const
-  {
-    return value_access<indexed_location<T, SimdSize, ArrayType>, sizeof(T)>
-      (indexed_location<T, SimdSize, ArrayType>{data, index_});
-  }
-};
-
 template<class PotentialIndexType>
 concept simd_index =
   (stdx_simd<PotentialIndexType> && std::is_integral_v<typename PotentialIndexType::value_type>) ||
-  requires(std::remove_cvref_t<PotentialIndexType> x) { []<int SimdSize, class IndexType>(index<SimdSize, IndexType>&){}(x); } ||
-  requires(std::remove_cvref_t<PotentialIndexType> x) { []<int SimdSize, class ArrayType>(index_array<SimdSize, ArrayType>&){}(x); };
+  requires(std::remove_cvref_t<PotentialIndexType> x) { []<int SimdSize, class IndexType>(index<SimdSize, IndexType>&){}(x); };
 
-/// TODO: Introduce masked_index and masked_index_array to support e.g. residual masked loops.
+/// TODO: Introduce masked_index to support e.g. residual masked loops.
 
 /// Returns the scalar index of a specific vector lane for a linear index.
 /**
@@ -4014,21 +3645,7 @@ concept simd_index =
  * @return The scalar index at vector lane `i`, i.e. `idx.start + i`.
  */
 template<int SimdSize, class IndexType>
-inline auto get_index(const index<SimdSize, IndexType>& idx, auto i)
-{
-  return idx.scalar_index(i);
-}
-
-/// Returns the scalar index of a specific vector lane for an indirect index.
-/**
- * @tparam SimdSize Deduced simd size.
- * @tparam ArrayType Type of the array, which stores the indices.
- * @param idx Indirect simd index.
- * @param i Vector lane.
- * @return The scalar index at vector lane `i`, i.e. `idx.indices[i]`.
- */
-template<int SimdSize, class ArrayType>
-inline auto get_index(const index_array<SimdSize, ArrayType>& idx, auto i)
+inline auto scalar_index(const index<SimdSize, IndexType>& idx, auto i)
 {
   return idx.scalar_index(i);
 }
@@ -4042,7 +3659,7 @@ inline auto get_index(const index_array<SimdSize, ArrayType>& idx, auto i)
  * @return The scalar index at vector lane `i`, i.e. `idx[i]`.
  */
 template<std::integral IndexType, class Abi>
-inline auto get_index(const stdx::simd<IndexType, Abi>& idx, auto i)
+inline auto scalar_index(const stdx::simd<IndexType, Abi>& idx, auto i)
 {
   return idx[i];
 }
@@ -4178,7 +3795,7 @@ inline auto load_rvalue(auto&& base, const IndexType& idx, auto&& subobject)
       {
         dest[i] = src;
       },
-      result, subobject(base[get_index(idx, i)]));
+      result, subobject(base[scalar_index(idx, i)]));
   }
   return result;
 }
@@ -4203,7 +3820,7 @@ inline auto load_rvalue(auto&& base, const IndexType& idx)
       {
         dest[i] = src;
       },
-      result, base[get_index(idx, i)]);
+      result, base[scalar_index(idx, i)]);
   }
   return result;
 }
@@ -4659,53 +4276,12 @@ struct index
   }
 };
 
-/// Class representing a simd index to indirect indexed elements in an array.
-/**
- * @tparam SimdSize Length of the simd sequence.
- * @tparam ArrayType Type of the array, which stores the indices. Defaults to std::array<size_t, SimdSize>, but could
- *   be stdx::fixed_size_simd<size_t, SimdSize>. Also size_t can be exchanged for another integral type.
- *   It is also possible to specify e.g. `int*` and thus use a pointer to a location in a larger array.
- */
-template<int SimdSize, class ArrayType = std::array<size_t, SimdSize>>
-struct index_array
-{
-  /// Return the length of the simd sequence.
-  /**
-   * @return The length of the simd sequence.
-   */
-  static constexpr int size() { return SimdSize; }
-
-  /// Return the scalar index of a vector lane.
-  /**
-   * @param i Index in the vector must be in the range [0, SimdSize) .
-   * @return The scalar index at vector lane i, i.e. index_[i].
-   */
-  auto scalar_index(int i) const { return index_[i]; }
-
-  /// The index array, the n'th entry defines the index of the n'th element in the simd type.
-  ArrayType index_;
-
-  /// A reverse overloaded operator[] for simdized array accesses, since global operator[] is not allowed (yet).
-  /**
-   * @tparam T Data type of the elements in the array.
-   * @param data Pointer to the array.
-   * @return A value_access representing a simd access expression to indirect indexed elements in an array.
-   */
-  template<class T>
-  auto operator[](T* data) const
-  {
-    return value_access<indexed_location<T, SimdSize, ArrayType>, sizeof(T)>
-      (indexed_location<T, SimdSize, ArrayType>{data, index_});
-  }
-};
-
 template<class PotentialIndexType>
 concept simd_index =
   (stdx_simd<PotentialIndexType> && std::is_integral_v<typename PotentialIndexType::value_type>) ||
-  requires(std::remove_cvref_t<PotentialIndexType> x) { []<int SimdSize, class IndexType>(index<SimdSize, IndexType>&){}(x); } ||
-  requires(std::remove_cvref_t<PotentialIndexType> x) { []<int SimdSize, class ArrayType>(index_array<SimdSize, ArrayType>&){}(x); };
+  requires(std::remove_cvref_t<PotentialIndexType> x) { []<int SimdSize, class IndexType>(index<SimdSize, IndexType>&){}(x); };
 
-/// TODO: Introduce masked_index and masked_index_array to support e.g. residual masked loops.
+/// TODO: Introduce masked_index to support e.g. residual masked loops.
 
 /// Returns the scalar index of a specific vector lane for a linear index.
 /**
@@ -4716,21 +4292,7 @@ concept simd_index =
  * @return The scalar index at vector lane `i`, i.e. `idx.start + i`.
  */
 template<int SimdSize, class IndexType>
-inline auto get_index(const index<SimdSize, IndexType>& idx, auto i)
-{
-  return idx.scalar_index(i);
-}
-
-/// Returns the scalar index of a specific vector lane for an indirect index.
-/**
- * @tparam SimdSize Deduced simd size.
- * @tparam ArrayType Type of the array, which stores the indices.
- * @param idx Indirect simd index.
- * @param i Vector lane.
- * @return The scalar index at vector lane `i`, i.e. `idx.indices[i]`.
- */
-template<int SimdSize, class ArrayType>
-inline auto get_index(const index_array<SimdSize, ArrayType>& idx, auto i)
+inline auto scalar_index(const index<SimdSize, IndexType>& idx, auto i)
 {
   return idx.scalar_index(i);
 }
@@ -4744,7 +4306,7 @@ inline auto get_index(const index_array<SimdSize, ArrayType>& idx, auto i)
  * @return The scalar index at vector lane `i`, i.e. `idx[i]`.
  */
 template<std::integral IndexType, class Abi>
-inline auto get_index(const stdx::simd<IndexType, Abi>& idx, auto i)
+inline auto scalar_index(const stdx::simd<IndexType, Abi>& idx, auto i)
 {
   return idx[i];
 }
@@ -5189,53 +4751,12 @@ struct index
   }
 };
 
-/// Class representing a simd index to indirect indexed elements in an array.
-/**
- * @tparam SimdSize Length of the simd sequence.
- * @tparam ArrayType Type of the array, which stores the indices. Defaults to std::array<size_t, SimdSize>, but could
- *   be stdx::fixed_size_simd<size_t, SimdSize>. Also size_t can be exchanged for another integral type.
- *   It is also possible to specify e.g. `int*` and thus use a pointer to a location in a larger array.
- */
-template<int SimdSize, class ArrayType = std::array<size_t, SimdSize>>
-struct index_array
-{
-  /// Return the length of the simd sequence.
-  /**
-   * @return The length of the simd sequence.
-   */
-  static constexpr int size() { return SimdSize; }
-
-  /// Return the scalar index of a vector lane.
-  /**
-   * @param i Index in the vector must be in the range [0, SimdSize) .
-   * @return The scalar index at vector lane i, i.e. index_[i].
-   */
-  auto scalar_index(int i) const { return index_[i]; }
-
-  /// The index array, the n'th entry defines the index of the n'th element in the simd type.
-  ArrayType index_;
-
-  /// A reverse overloaded operator[] for simdized array accesses, since global operator[] is not allowed (yet).
-  /**
-   * @tparam T Data type of the elements in the array.
-   * @param data Pointer to the array.
-   * @return A value_access representing a simd access expression to indirect indexed elements in an array.
-   */
-  template<class T>
-  auto operator[](T* data) const
-  {
-    return value_access<indexed_location<T, SimdSize, ArrayType>, sizeof(T)>
-      (indexed_location<T, SimdSize, ArrayType>{data, index_});
-  }
-};
-
 template<class PotentialIndexType>
 concept simd_index =
   (stdx_simd<PotentialIndexType> && std::is_integral_v<typename PotentialIndexType::value_type>) ||
-  requires(std::remove_cvref_t<PotentialIndexType> x) { []<int SimdSize, class IndexType>(index<SimdSize, IndexType>&){}(x); } ||
-  requires(std::remove_cvref_t<PotentialIndexType> x) { []<int SimdSize, class ArrayType>(index_array<SimdSize, ArrayType>&){}(x); };
+  requires(std::remove_cvref_t<PotentialIndexType> x) { []<int SimdSize, class IndexType>(index<SimdSize, IndexType>&){}(x); };
 
-/// TODO: Introduce masked_index and masked_index_array to support e.g. residual masked loops.
+/// TODO: Introduce masked_index to support e.g. residual masked loops.
 
 /// Returns the scalar index of a specific vector lane for a linear index.
 /**
@@ -5246,21 +4767,7 @@ concept simd_index =
  * @return The scalar index at vector lane `i`, i.e. `idx.start + i`.
  */
 template<int SimdSize, class IndexType>
-inline auto get_index(const index<SimdSize, IndexType>& idx, auto i)
-{
-  return idx.scalar_index(i);
-}
-
-/// Returns the scalar index of a specific vector lane for an indirect index.
-/**
- * @tparam SimdSize Deduced simd size.
- * @tparam ArrayType Type of the array, which stores the indices.
- * @param idx Indirect simd index.
- * @param i Vector lane.
- * @return The scalar index at vector lane `i`, i.e. `idx.indices[i]`.
- */
-template<int SimdSize, class ArrayType>
-inline auto get_index(const index_array<SimdSize, ArrayType>& idx, auto i)
+inline auto scalar_index(const index<SimdSize, IndexType>& idx, auto i)
 {
   return idx.scalar_index(i);
 }
@@ -5274,7 +4781,7 @@ inline auto get_index(const index_array<SimdSize, ArrayType>& idx, auto i)
  * @return The scalar index at vector lane `i`, i.e. `idx[i]`.
  */
 template<std::integral IndexType, class Abi>
-inline auto get_index(const stdx::simd<IndexType, Abi>& idx, auto i)
+inline auto scalar_index(const stdx::simd<IndexType, Abi>& idx, auto i)
 {
   return idx[i];
 }
@@ -5410,7 +4917,7 @@ inline auto load_rvalue(auto&& base, const IndexType& idx, auto&& subobject)
       {
         dest[i] = src;
       },
-      result, subobject(base[get_index(idx, i)]));
+      result, subobject(base[scalar_index(idx, i)]));
   }
   return result;
 }
@@ -5435,7 +4942,7 @@ inline auto load_rvalue(auto&& base, const IndexType& idx)
       {
         dest[i] = src;
       },
-      result, base[get_index(idx, i)]);
+      result, base[scalar_index(idx, i)]);
   }
   return result;
 }
@@ -5637,9 +5144,9 @@ template<class IndexType>
   requires(!std::integral<IndexType>)
 inline decltype(auto) generate_universal(const IndexType& idx, auto&& generator)
 {
-  return universal_simd<decltype(generator(get_index(idx, 0))), IndexType::size()>([&](auto i)
+  return universal_simd<decltype(generator(scalar_index(idx, 0))), IndexType::size()>([&](auto i)
     {
-      return generator(get_index(idx, i));
+      return generator(scalar_index(idx, i));
     });
 }
 
@@ -6274,53 +5781,12 @@ struct index
   }
 };
 
-/// Class representing a simd index to indirect indexed elements in an array.
-/**
- * @tparam SimdSize Length of the simd sequence.
- * @tparam ArrayType Type of the array, which stores the indices. Defaults to std::array<size_t, SimdSize>, but could
- *   be stdx::fixed_size_simd<size_t, SimdSize>. Also size_t can be exchanged for another integral type.
- *   It is also possible to specify e.g. `int*` and thus use a pointer to a location in a larger array.
- */
-template<int SimdSize, class ArrayType = std::array<size_t, SimdSize>>
-struct index_array
-{
-  /// Return the length of the simd sequence.
-  /**
-   * @return The length of the simd sequence.
-   */
-  static constexpr int size() { return SimdSize; }
-
-  /// Return the scalar index of a vector lane.
-  /**
-   * @param i Index in the vector must be in the range [0, SimdSize) .
-   * @return The scalar index at vector lane i, i.e. index_[i].
-   */
-  auto scalar_index(int i) const { return index_[i]; }
-
-  /// The index array, the n'th entry defines the index of the n'th element in the simd type.
-  ArrayType index_;
-
-  /// A reverse overloaded operator[] for simdized array accesses, since global operator[] is not allowed (yet).
-  /**
-   * @tparam T Data type of the elements in the array.
-   * @param data Pointer to the array.
-   * @return A value_access representing a simd access expression to indirect indexed elements in an array.
-   */
-  template<class T>
-  auto operator[](T* data) const
-  {
-    return value_access<indexed_location<T, SimdSize, ArrayType>, sizeof(T)>
-      (indexed_location<T, SimdSize, ArrayType>{data, index_});
-  }
-};
-
 template<class PotentialIndexType>
 concept simd_index =
   (stdx_simd<PotentialIndexType> && std::is_integral_v<typename PotentialIndexType::value_type>) ||
-  requires(std::remove_cvref_t<PotentialIndexType> x) { []<int SimdSize, class IndexType>(index<SimdSize, IndexType>&){}(x); } ||
-  requires(std::remove_cvref_t<PotentialIndexType> x) { []<int SimdSize, class ArrayType>(index_array<SimdSize, ArrayType>&){}(x); };
+  requires(std::remove_cvref_t<PotentialIndexType> x) { []<int SimdSize, class IndexType>(index<SimdSize, IndexType>&){}(x); };
 
-/// TODO: Introduce masked_index and masked_index_array to support e.g. residual masked loops.
+/// TODO: Introduce masked_index to support e.g. residual masked loops.
 
 /// Returns the scalar index of a specific vector lane for a linear index.
 /**
@@ -6331,21 +5797,7 @@ concept simd_index =
  * @return The scalar index at vector lane `i`, i.e. `idx.start + i`.
  */
 template<int SimdSize, class IndexType>
-inline auto get_index(const index<SimdSize, IndexType>& idx, auto i)
-{
-  return idx.scalar_index(i);
-}
-
-/// Returns the scalar index of a specific vector lane for an indirect index.
-/**
- * @tparam SimdSize Deduced simd size.
- * @tparam ArrayType Type of the array, which stores the indices.
- * @param idx Indirect simd index.
- * @param i Vector lane.
- * @return The scalar index at vector lane `i`, i.e. `idx.indices[i]`.
- */
-template<int SimdSize, class ArrayType>
-inline auto get_index(const index_array<SimdSize, ArrayType>& idx, auto i)
+inline auto scalar_index(const index<SimdSize, IndexType>& idx, auto i)
 {
   return idx.scalar_index(i);
 }
@@ -6359,7 +5811,7 @@ inline auto get_index(const index_array<SimdSize, ArrayType>& idx, auto i)
  * @return The scalar index at vector lane `i`, i.e. `idx[i]`.
  */
 template<std::integral IndexType, class Abi>
-inline auto get_index(const stdx::simd<IndexType, Abi>& idx, auto i)
+inline auto scalar_index(const stdx::simd<IndexType, Abi>& idx, auto i)
 {
   return idx[i];
 }
@@ -6490,7 +5942,7 @@ inline auto load(const indexed_location<T, SimdSize, ArrayType>& location)
 template<simd_arithmetic BaseType, simd_index IndexType>
 inline auto load_rvalue(auto&& base, const IndexType& idx)
 {
-  return stdx::fixed_size_simd<BaseType, IndexType::size()>([&](auto i) { return base[get_index(idx, i)]; });
+  return stdx::fixed_size_simd<BaseType, IndexType::size()>([&](auto i) { return base[scalar_index(idx, i)]; });
 }
 
 /**
@@ -6508,7 +5960,7 @@ inline auto load_rvalue(auto&& base, const IndexType& idx, auto&& subobject)
 {
   return stdx::fixed_size_simd<BaseType, IndexType::size()>([&](auto i)
   {
-    return subobject(base[get_index(idx, i)]);
+    return subobject(base[scalar_index(idx, i)]);
   });
 }
 
@@ -6714,19 +6166,6 @@ struct LValueSeparator<true>
     return &base_addr[0];
   }
 
-  /// Computes the base address of a given array for an indirect simd access using indices in an array.
-  /**
-   * @tparam SimdSize Deduced simd size (number of vector lanes) of the access.
-   * @tparam ArrayType Deduced type of the array, which stores the indices.
-   * @param base_addr Array base.
-   * @return The address of the first array element.
-   */
-  template<int SimdSize, class ArrayType>
-  static auto get_base_address(auto&& base_addr, const index_array<SimdSize, ArrayType>&)
-  {
-    return &base_addr[0];
-  }
-
   /// Computes the base address of a member of array elements for an linear simd access.
   /**
    * @tparam SimdSize Deduced simd size (number of vector lanes) of the access.
@@ -6756,20 +6195,6 @@ struct LValueSeparator<true>
     return &subobject(base_addr[0]);
   }
 
-  /// Computes the base address of a member of array elements for an indirect simd access using indices in an array.
-  /**
-   * @tparam SimdSize Deduced simd size (number of vector lanes) of the access.
-   * @tparam ArrayType Deduced type of the array, which stores the indices.
-   * @param base_addr Array base.
-   * @param subobject A functor yielding a member of the array element.
-   * @return The address of the member of the first array element.
-   */
-  template<int SimdSize, class ArrayType>
-  static auto get_base_address(auto&& base_addr, const index_array<SimdSize, ArrayType>&, auto&& subobject)
-  {
-    return &subobject(base_addr[0]);
-  }
-
   /// Creates a value access object for a linear simd access.
   /**
    * @tparam ElementSize Size of an array element.
@@ -6783,22 +6208,6 @@ struct LValueSeparator<true>
   static auto get_direct_value_access(T* base, const index<SimdSize, IndexType>&)
   {
     return make_value_access<ElementSize>(linear_location<T, SimdSize>{base});
-  }
-
-  /// Creates a value access object for an indirect simd access using indices in an array.
-  /**
-   * @tparam ElementSize Size of an array element.
-   * @tparam T Deduced type of the simd-accessed element.
-   * @tparam SimdSize Deduced simd size (number of vector lanes) of the access.
-   * @tparam ArrayType Deduced type of the array, which stores the indices.
-   * @param base Pointer to the first array element or one of its members.
-   * @param idx SIMD index.
-   * @return A value access object (see \ref value_access), which can be used as lhs in assignments.
-   */
-  template<size_t ElementSize, class T, int SimdSize, class ArrayType>
-  static auto get_direct_value_access(T* base, const index_array<SimdSize, ArrayType>& idx)
-  {
-    return make_value_access<ElementSize>(indexed_location<T, SimdSize, ArrayType>{base, idx.index_});
   }
 
   /// Creates a value access object for an indirect simd access using indices in `stdx::simd`.

@@ -76,9 +76,9 @@ template<class IndexType>
   requires(!std::integral<IndexType>)
 inline decltype(auto) generate_universal(const IndexType& idx, auto&& generator)
 {
-  return universal_simd<decltype(generator(get_index(idx, 0))), IndexType::size()>([&](auto i)
+  return universal_simd<decltype(generator(scalar_index(idx, 0))), IndexType::size()>([&](auto i)
     {
-      return generator(get_index(idx, i));
+      return generator(scalar_index(idx, i));
     });
 }
 

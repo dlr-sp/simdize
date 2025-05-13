@@ -128,7 +128,7 @@ TEST(Loop, AligningCopy)
     {
       if constexpr (simd_access::is_simd_index(i))
       {
-        simdRecorder[simd_access::get_index(i, 0)] = 1;
+        simdRecorder[simd_access::scalar_index(i, 0)] = 1;
       }
       else
       {

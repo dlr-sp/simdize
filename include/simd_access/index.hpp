@@ -82,7 +82,7 @@ concept simd_index =
  * @return The scalar index at vector lane `i`, i.e. `idx.start + i`.
  */
 template<int SimdSize, class IndexType>
-inline auto get_index(const index<SimdSize, IndexType>& idx, auto i)
+inline auto scalar_index(const index<SimdSize, IndexType>& idx, auto i)
 {
   return idx.scalar_index(i);
 }
@@ -96,7 +96,7 @@ inline auto get_index(const index<SimdSize, IndexType>& idx, auto i)
  * @return The scalar index at vector lane `i`, i.e. `idx[i]`.
  */
 template<std::integral IndexType, class Abi>
-inline auto get_index(const stdx::simd<IndexType, Abi>& idx, auto i)
+inline auto scalar_index(const stdx::simd<IndexType, Abi>& idx, auto i)
 {
   return idx[i];
 }

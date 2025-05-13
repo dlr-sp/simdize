@@ -121,7 +121,7 @@ inline auto load(const indexed_location<T, SimdSize, ArrayType>& location)
 template<simd_arithmetic BaseType, simd_index IndexType>
 inline auto load_rvalue(auto&& base, const IndexType& idx)
 {
-  return stdx::fixed_size_simd<BaseType, IndexType::size()>([&](auto i) { return base[get_index(idx, i)]; });
+  return stdx::fixed_size_simd<BaseType, IndexType::size()>([&](auto i) { return base[scalar_index(idx, i)]; });
 }
 
 /**
@@ -139,7 +139,7 @@ inline auto load_rvalue(auto&& base, const IndexType& idx, auto&& subobject)
 {
   return stdx::fixed_size_simd<BaseType, IndexType::size()>([&](auto i)
   {
-    return subobject(base[get_index(idx, i)]);
+    return subobject(base[scalar_index(idx, i)]);
   });
 }
 

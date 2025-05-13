@@ -26,7 +26,7 @@ concept simd_accessible = simd_index<T> || any_simd<T>;
  */
 inline auto element(const simd_index auto& index, int i)
 {
-  return get_index(index, i);
+  return scalar_index(index, i);
 }
 
 /// Return a single value of a simd value.

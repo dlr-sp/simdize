@@ -137,7 +137,7 @@ inline auto load_rvalue(auto&& base, const IndexType& idx, auto&& subobject)
       {
         dest[i] = src;
       },
-      result, subobject(base[get_index(idx, i)]));
+      result, subobject(base[scalar_index(idx, i)]));
   }
   return result;
 }
@@ -162,7 +162,7 @@ inline auto load_rvalue(auto&& base, const IndexType& idx)
       {
         dest[i] = src;
       },
-      result, base[get_index(idx, i)]);
+      result, base[scalar_index(idx, i)]);
   }
   return result;
 }
